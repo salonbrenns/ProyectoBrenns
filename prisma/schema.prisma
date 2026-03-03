@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+  
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  
+}
+
+model Marca {
+  id           Int            @id @default(autoincrement())
+  nombre       String         @unique @db.VarChar(100)
+  productos Producto[]
+
+  @@map("tblmarcas")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Producto {
+  id                  Int        @id @default(autoincrement())
+  codigo              String     @db.VarChar(50)
+  nombre              String     @db.VarChar(150)
+  descripcion         String?
+  precio_costo        Decimal    @db.Decimal(10, 2)
+  precio_venta        Decimal    @db.Decimal(10, 2)
+  marca_id            Int?
+  stock               Int        @default(0)
+  activo              Boolean?   @default(true)
+  fecha_creacion      DateTime?  @default(now()) @db.Timestamp(6)
+  fecha_actualizacion DateTime?  @default(now()) @db.Timestamp(6)
+  marca            Marca? @relation(fields: [marca_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("tblproductos")
+}

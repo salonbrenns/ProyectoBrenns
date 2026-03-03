@@ -2,8 +2,8 @@
 
 import React, { useState } from "react"
 import Image from "next/image"
-import Link from "next/link"
-import { Plus, Minus, ShoppingBag } from "lucide-react"
+// Se eliminó el import de Link que no se usaba
+import { Plus, Minus, ShoppingBag, Star } from "lucide-react"
 import Breadcrumb from "./Breadcrumb"
 
 type Producto = {
@@ -19,6 +19,11 @@ type Producto = {
   qr?: string
 }
 
+// Interfaz para los elementos del carrito para evitar el uso de 'any'
+interface CartItem extends Producto {
+  cantidad: number
+}
+
 export default function ProductDetailClient({ producto }: { producto: Producto }) {
   const [cantidad, setCantidad] = useState<number>(1)
 
@@ -28,14 +33,15 @@ export default function ProductDetailClient({ producto }: { producto: Producto }
   const agregarAlCarrito = () => {
     try {
       const stored = localStorage.getItem("nail_store_cart") || "[]"
-      const carrito = JSON.parse(stored)
+      const carrito: CartItem[] = JSON.parse(stored)
 
-      const existe = carrito.find((item: any) => item.id === producto.id)
+      // CORRECCIÓN: Tipado de item como CartItem en lugar de any
+      const existe = carrito.find((item: CartItem) => item.id === producto.id)
       const cantidadSeleccionada = cantidad
 
-      let nuevoCarrito
+      let nuevoCarrito: CartItem[]
       if (existe) {
-        nuevoCarrito = carrito.map((item: any) =>
+        nuevoCarrito = carrito.map((item: CartItem) =>
           item.id === producto.id
             ? { ...item, cantidad: item.cantidad + cantidadSeleccionada }
             : item
@@ -50,7 +56,7 @@ export default function ProductDetailClient({ producto }: { producto: Producto }
             precio: producto.precio,
             cantidad: cantidadSeleccionada,
             img: producto.img,
-          },
+          } as CartItem,
         ]
       }
 
