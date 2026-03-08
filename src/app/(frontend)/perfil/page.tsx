@@ -1,62 +1,60 @@
-// src/app/perfil/page.tsx
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { User, Calendar, Mail, Phone, MapPin, Edit2, LogOut, Heart, Clock, CreditCard } from "lucide-react"
-import AuthGuard from "@/components/ui/AuthGuard"
+import { useEffect, useState } from "react"
+import { Calendar, Mail, Phone, Edit2, Heart, Clock, CreditCard } from "lucide-react"
 import Breadcrumb from "@/components/Breadcrumb"
+import EditarPerfilModal from "@/components/ui/EditarPerfilModal"
 
 export default function PerfilPage() {
+  const { data: session, status } = useSession()
   const router = useRouter()
-  const [usuario, setUsuario] = useState({
-    nombre: "Cargando...",
-    correo: "cargando...",
-    telefono: "+52 961 123 4567",
-    miembroDesde: "Cargando...",
-    nivel: "Estudiante PRO",
-    cursosInscritos: 3,
-    citasPendientes: 2,
-    favoritos: 8,
-  })
-  const [primerLetra, setPrimerLetra] = useState("U")
+  const [modalAbierto, setModalAbierto] = useState(false)
+  const [datosLocales, setDatosLocales] = useState<{
+    nombre?: string
+    correo?: string
+    telefono?: string | null
+  }>({})
 
   useEffect(() => {
-    // Cargar datos del usuario desde localStorage
-    if (typeof window !== "undefined") {
-      const nombre = localStorage.getItem("user_nombre") || "Usuario"
-      const correo = localStorage.getItem("user_email") || "correo@ejemplo.com"
-      const fecha = localStorage.getItem("user_fecha") || "Recientemente"
-
-      setUsuario(prev => ({
-        ...prev,
-        nombre,
-        correo,
-        miembroDesde: fecha
-      }))
-      setPrimerLetra(nombre.charAt(0).toUpperCase())
+    if (status === "unauthenticated") {
+      router.push("/login?next=/perfil")
     }
-  }, [])
+  }, [status, router])
 
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("auth_token")
-      localStorage.removeItem("user_email")
-      localStorage.removeItem("user_nombre")
-      localStorage.removeItem("user_fecha")
-      sessionStorage.removeItem("auth_active")
-      // Disparar evento para que el Header se actualice
-      window.dispatchEvent(new Event("auth-changed"))
-    }
+  if (status === "loading") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-pink-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando perfil...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (!session) return null
+
+  // Usar datos locales si se actualizaron, sino los de la sesión
+  const nombre = datosLocales.nombre ?? session.user?.name ?? "Usuario"
+  const correo = datosLocales.correo ?? session.user?.email ?? ""
+  const telefono = datosLocales.telefono ?? (session.user as any)?.telefono ?? "No proporcionado"
+  const primerLetra = nombre.charAt(0).toUpperCase()
+  const fechaRegistro = new Date().toLocaleDateString("es-MX", {
+    month: "long",
+    year: "numeric",
+  })
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false })
     router.push("/login")
   }
 
   return (
-    <AuthGuard>
-      <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-8 sm:py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-8 sm:py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
         <Breadcrumb items={[
           { label: "Inicio", href: "/" },
@@ -70,52 +68,55 @@ export default function PerfilPage() {
               <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-pink-400 to-pink-600 rounded-full flex items-center justify-center text-white text-5xl sm:text-6xl font-bold shadow-xl">
                 {primerLetra}
               </div>
-              <button className="absolute bottom-2 right-2 bg-white p-3 rounded-full shadow-lg hover:scale-110 transition">
+              <button
+                onClick={() => setModalAbierto(true)}
+                className="absolute bottom-2 right-2 bg-white p-3 rounded-full shadow-lg hover:scale-110 transition"
+              >
                 <Edit2 className="w-5 h-5 text-pink-600" />
               </button>
             </div>
 
             <div className="text-center sm:text-left flex-1">
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">{usuario.nombre}</h1>
-              <p className="text-pink-600 font-bold text-lg mt-2">{usuario.nivel}</p>
-              <p className="text-gray-600 mt-1">Miembro desde {usuario.miembroDesde}</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">{nombre}</h1>
+              <p className="text-pink-600 font-bold text-lg mt-2">
+                {session.user?.role === "ADMIN" ? "Administrador" :
+                 session.user?.role === "DOCENTE" ? "Docente" : "Cliente"}
+              </p>
+              <p className="text-gray-600 mt-1">Miembro desde {fechaRegistro}</p>
             </div>
 
-            <div className="flex gap-4">
-              <button className="bg-pink-600 hover:bg-pink-700 text-white font-bold px-8 py-4 rounded-full shadow-lg transition transform hover:scale-105">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={() => setModalAbierto(true)}
+                className="bg-pink-600 hover:bg-pink-700 text-white font-bold px-8 py-4 rounded-full shadow-lg transition transform hover:scale-105"
+              >
                 Editar Perfil
               </button>
-        
+              
             </div>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-
-          {/* Columna izquierda - Info personal */}
+          {/* Columna izquierda */}
           <div className="md:col-span-1 space-y-6">
             <div className="bg-white rounded-3xl shadow-xl p-6 border border-pink-100">
               <h2 className="text-xl font-bold text-pink-600 mb-6">Información Personal</h2>
               <div className="space-y-5">
                 <div className="flex items-center gap-4">
-                  <Mail className="w-6 h-6 text-pink-600" />
-                  <div className="break-all">
+                  <Mail className="w-6 h-6 text-pink-600 shrink-0" />
+                  <div className="overflow-hidden">
                     <p className="text-sm text-gray-600">Correo</p>
-                    <p className="font-medium text-sm">{usuario.correo}</p>
+                    <p className="font-medium text-sm truncate">{correo}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Phone className="w-6 h-6 text-pink-600" />
+                  <Phone className="w-6 h-6 text-pink-600 shrink-0" />
                   <div>
                     <p className="text-sm text-gray-600">Teléfono</p>
-                    <p className="font-medium">{usuario.telefono}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <MapPin className="w-6 h-6 text-pink-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Ubicación</p>
-                    <p className="font-medium">Huejutla de Reyes, Hidalgo</p>
+                    <p className={`font-medium text-sm ${telefono === "No proporcionado" ? "text-gray-400 italic" : "text-gray-800"}`}>
+                      {telefono}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -123,48 +124,34 @@ export default function PerfilPage() {
 
             <div className="bg-gradient-to-br from-pink-100 to-pink-50 rounded-3xl shadow-xl p-6 text-center">
               <Heart className="w-12 h-12 text-pink-600 mx-auto mb-4" />
-              <p className="text-4xl font-bold text-pink-600">{usuario.favoritos}</p>
+              <p className="text-4xl font-bold text-pink-600">0</p>
               <p className="text-gray-700 font-medium">Favoritos</p>
             </div>
           </div>
 
-          {/* Columna derecha - Actividad */}
+          {/* Columna derecha */}
           <div className="md:col-span-2 space-y-8">
-            {/* Estadísticas */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
               <div className="bg-white rounded-3xl shadow-xl p-6 text-center border border-pink-100">
                 <Calendar className="w-10 h-10 text-pink-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">{usuario.cursosInscritos}</p>
+                <p className="text-3xl font-bold text-gray-900">0</p>
                 <p className="text-gray-600">Cursos inscritos</p>
               </div>
               <div className="bg-white rounded-3xl shadow-xl p-6 text-center border border-pink-100">
                 <Clock className="w-10 h-10 text-pink-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">{usuario.citasPendientes}</p>
+                <p className="text-3xl font-bold text-gray-900">0</p>
                 <p className="text-gray-600">Citas pendientes</p>
               </div>
               <div className="bg-white rounded-3xl shadow-xl p-6 text-center border border-pink-100">
                 <CreditCard className="w-10 h-10 text-pink-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">5</p>
+                <p className="text-3xl font-bold text-gray-900">0</p>
                 <p className="text-gray-600">Compras totales</p>
               </div>
             </div>
 
-            {/* Mis cursos */}
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100">
-              <h2 className="text-2xl font-bold text-pink-600 mb-6">Mis Cursos Activos</h2>
-              <div className="space-y-4">
-                <Link href="/curso/1" className="block p-6 bg-pink-50 rounded-2xl hover:bg-pink-100 transition">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-gray-900">Acrílico Escultural: Nivel Intermedio</h3>
-                      <p className="text-pink-600">Inicia 19 de Octubre • Brenda García</p>
-                    </div>
-                    <div className="bg-pink-600 text-white px-4 py-2 rounded-full text-sm font-bold">
-                      Activo
-                    </div>
-                  </div>
-                </Link>
-              </div>
+              <h2 className="text-2xl font-bold text-pink-600 mb-4">Mis Cursos Activos</h2>
+              <p className="text-gray-500 text-center py-6">Aún no tienes cursos inscritos.</p>
             </div>
 
             <div className="text-center">
@@ -177,8 +164,18 @@ export default function PerfilPage() {
             </div>
           </div>
         </div>
-        </div>
-      </main>
-    </AuthGuard>
+      </div>
+
+      {/* Modal de edición */}
+      {modalAbierto && (
+        <EditarPerfilModal
+          onClose={() => setModalAbierto(false)}
+          onActualizado={(datos) => {
+            setDatosLocales(datos)
+            setModalAbierto(false)
+          }}
+        />
+      )}
+    </main>
   )
 }

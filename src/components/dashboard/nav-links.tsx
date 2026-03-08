@@ -7,21 +7,33 @@ import {
   ShoppingBagIcon,
   SparklesIcon,
   AcademicCapIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  ScissorsIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
 const links = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
-  { name: 'Marcas', href: '/admin/marcas', icon: TagIcon },
-  { name: 'Categorías', href: '/admin/categorias', icon: Squares2X2Icon },
-  { name: 'Productos', href: '/admin/productos', icon: ShoppingBagIcon },
-  { name: 'Servicios', href: '/admin/servicios', icon: SparklesIcon },
-  { name: 'Cursos', href: '/admin/cursos', icon: AcademicCapIcon },
+  { name: 'Dashboard',  href: '/admin/dashboard',   icon: HomeIcon         },
+  { name: 'Marcas',     href: '/admin/marcas',       icon: TagIcon          },
+  { name: 'Categorías', href: '/admin/categorias',   icon: Squares2X2Icon   },
+  { name: 'Productos',  href: '/admin/productos',    icon: ShoppingBagIcon  },
+  { name: 'Servicios',  href: '/admin/servicios',    icon: SparklesIcon     },
+  { name: 'Horarios',   href: '/admin/horarios',     icon: ClockIcon        },
+  { name: 'Citas',      href: '/admin/citas',        icon: CalendarDaysIcon },
+  { name: 'Cursos',     href: '/admin/cursos',       icon: AcademicCapIcon  },
+  { name: 'Días Bloqueados', href: '/admin/dias-bloqueados', icon: CalendarDaysIcon },
 ];
 
-export default function NavLinks({ mobile = false, onLinkClick }: { mobile?: boolean, onLinkClick?: () => void }) {
+export default function NavLinks({
+  mobile = false,
+  onLinkClick,
+}: {
+  mobile?: boolean
+  onLinkClick?: () => void
+}) {
   const pathname = usePathname();
 
   return (

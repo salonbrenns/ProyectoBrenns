@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, use, useEffect } from "react" 
+import { useState, use } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { notFound } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { ChevronLeft, Star, Plus, Minus, ShoppingBag } from "lucide-react"
 
-// Simulación de base de datos (Lo ideal es que esto esté en /lib/data.ts)
 const productos = {
   "1": { id: 1, nombre: "Esmalte Rojo", precio: 15000, categoria: "Nail Art", marca: "Renova Matte", img: "/catalogo/Rojo.jpg", rating: 4.5, reviews: 128, descripcion: "Un hermoso esmalte de color rojo que aporta un toque de elegancia a tus uñas." },
   "2": { id: 2, nombre: "Removedor Sin Acetona", precio: 16000, categoria: "Foot Care", marca: "Brenn's Care", img: "/catalogo/renovador.jpg", rating: 4.8, reviews: 89, descripcion: "Removedor suave sin acetona, ideal para uñas sensibles." },
@@ -16,43 +17,43 @@ const productos = {
 export default function ProductoDetalle({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const producto = productos[id as keyof typeof productos]
-  
-  // ESTADOS FALTANTES
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [quantity, setQuantity] = useState(1)
-  const [autenticado, setAutenticado] = useState(false)
-  const [cargado, setCargado] = useState(false)
-
-  useEffect(() => {
-    const token = localStorage.getItem("auth_token")
-    setAutenticado(!!token)
-    setCargado(true)
-  }, [])
+  const [agregado, setAgregado] = useState(false)
 
   if (!producto) return notFound()
-  if (!cargado) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
+
+  // Mientras carga la sesión no mostrar nada para evitar parpadeo
+  if (status === "loading") {
+    return <div className="min-h-screen flex items-center justify-center bg-pink-50">
+      <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  }
+
+  const autenticado = !!session
 
   const agregarAlCarrito = () => {
     const stored = localStorage.getItem("nail_store_cart") || "[]"
     const carrito = JSON.parse(stored)
     const existe = carrito.find((item: any) => item.id === producto.id)
-    
-    let nuevoCarrito
-    if (existe) {
-      nuevoCarrito = carrito.map((item: any) =>
-        item.id === producto.id ? { ...item, cantidad: item.cantidad + quantity } : item
-      )
-    } else {
-      nuevoCarrito = [...carrito, { ...producto, cantidad: quantity }]
-    }
+
+    const nuevoCarrito = existe
+      ? carrito.map((item: any) =>
+          item.id === producto.id ? { ...item, cantidad: item.cantidad + quantity } : item
+        )
+      : [...carrito, { ...producto, cantidad: quantity }]
 
     localStorage.setItem("nail_store_cart", JSON.stringify(nuevoCarrito))
-    alert(`¡${quantity} ${producto.nombre} agregado(s)!`)
+    window.dispatchEvent(new Event("carrito-actualizado"))
+    setAgregado(true)
+    setTimeout(() => setAgregado(false), 2000)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-12">
       <div className="max-w-6xl mx-auto px-6">
-        <Link href={autenticado ? "/catalogo-privada" : "/catalogo"} className="inline-flex items-center gap-2 text-pink-600 hover:text-pink-700 font-semibold mb-8">
+        <Link href="/catalogo" className="inline-flex items-center gap-2 text-pink-600 hover:text-pink-700 font-semibold mb-8">
           <ChevronLeft className="w-5 h-5" />
           Volver al Catálogo
         </Link>
@@ -68,7 +69,7 @@ export default function ProductoDetalle({ params }: { params: Promise<{ id: stri
             <span className="bg-pink-100 text-pink-700 px-4 py-1 rounded-full text-xs font-bold w-fit mb-4">{producto.categoria}</span>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">{producto.nombre}</h1>
             <p className="text-pink-600 font-medium mb-6">{producto.marca}</p>
-            
+
             <div className="flex items-center gap-2 mb-6">
               <Star className="w-5 h-5 text-yellow-400 fill-current" />
               <span className="font-bold">{producto.rating}</span>
@@ -79,22 +80,42 @@ export default function ProductoDetalle({ params }: { params: Promise<{ id: stri
 
             <div className="text-3xl font-bold text-pink-600 mb-8">${(producto.precio / 100).toFixed(2)} MXN</div>
 
-            {/* Solo mostrar controles de compra si está AUTENTICADO */}
             {autenticado ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border-2 border-pink-100 rounded-full p-1">
-                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="p-2 hover:bg-pink-50 rounded-full transition"><Minus className="w-4 h-4"/></button>
+                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="p-2 hover:bg-pink-50 rounded-full transition">
+                      <Minus className="w-4 h-4" />
+                    </button>
                     <span className="w-8 text-center font-bold">{quantity}</span>
-                    <button onClick={() => setQuantity(q => q + 1)} className="p-2 hover:bg-pink-50 rounded-full transition"><Plus className="w-4 h-4"/></button>
+                    <button onClick={() => setQuantity(q => q + 1)} className="p-2 hover:bg-pink-50 rounded-full transition">
+                      <Plus className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button onClick={agregarAlCarrito} className="flex-1 bg-pink-600 text-white py-4 rounded-full font-bold shadow-lg hover:bg-pink-700 transition flex items-center justify-center gap-2">
-                    <ShoppingBag className="w-5 h-5" /> Agregar al Carrito
+                  <button
+                    onClick={agregarAlCarrito}
+                    className={`flex-1 py-4 rounded-full font-bold shadow-lg transition flex items-center justify-center gap-2 ${
+                      agregado
+                        ? "bg-green-500 text-white"
+                        : "bg-pink-600 hover:bg-pink-700 text-white"
+                    }`}
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    {agregado ? "¡Agregado!" : "Agregar al Carrito"}
                   </button>
                 </div>
+                <button
+                  onClick={() => router.push("/carrito")}
+                  className="w-full border-2 border-pink-300 text-pink-600 py-4 rounded-full font-bold hover:bg-pink-50 transition"
+                >
+                  Ver Carrito
+                </button>
               </div>
             ) : (
-              <Link href="/login" className="w-full bg-gray-800 text-white py-4 rounded-full font-bold text-center block hover:bg-gray-900">
+              <Link
+                href={`/login?next=/producto/${id}`}
+                className="w-full bg-gray-800 text-white py-4 rounded-full font-bold text-center block hover:bg-gray-900 transition"
+              >
                 Inicia sesión para comprar
               </Link>
             )}

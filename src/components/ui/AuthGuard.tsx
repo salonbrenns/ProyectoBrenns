@@ -1,26 +1,38 @@
+// src/components/ui/AuthGuard.tsx
 "use client"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession()
   const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null
-    if (!token) {
-      // Preserve full path + query when redirecting
-      const search = searchParams ? `?${searchParams.toString()}` : ""
-      const full = `${pathname || "/"}${search}`
-      const next = `?next=${encodeURIComponent(full)}`
-      router.push(`/login${next}`)
-      return
+    if (status === "unauthenticated") {
+      const ruta = window.location.pathname
+      router.push(`/login?next=${ruta}`)
     }
-    setChecked(true)
-  }, [router, pathname, searchParams])
+  }, [status, router])
 
-  if (!checked) return null
+  // Cargando sesión
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-pink-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-pink-600 font-semibold text-lg">Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // No autenticado — no renderizar nada (el useEffect redirige)
+  if (status === "unauthenticated") {
+    return null
+  }
+
+  // Autenticado — mostrar contenido
   return <>{children}</>
 }

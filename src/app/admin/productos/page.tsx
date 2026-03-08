@@ -45,7 +45,7 @@ export default async function ProductosPage({
     skip
   })
 
-  const productos = productosRaw.map(p => ({
+  const productos = productosRaw.map((p) => ({
     ...p,
     precio_venta: Number(p.precio_venta)
   }))

@@ -1,18 +1,65 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
+import bcrypt from "bcryptjs"
 
-export async function POST(req: Request) {
+const prisma = new PrismaClient()
+
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { name, email, password } = body
+    const { name, email, password , telefono} = await req.json()
 
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: "Faltan datos" }, { status: 400 })
+    // Validaciones básicas
+    if (!name || !email || !password || !telefono) {
+      return NextResponse.json(
+        { error: "Nombre, correo y contraseña son requeridos" },
+        { status: 400 }
+      )
     }
 
-    // Demo: en una app real crearías el usuario en la DB
-    const token = `demo-token-${email}`
-    return NextResponse.json({ token, user: { email, name } })
-  } catch (err) {
-    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 })
+    // Verificar si el correo ya existe
+    const usuarioExistente = await prisma.usuario.findUnique({
+      where: { correo: email },
+    })
+
+    if (usuarioExistente) {
+      return NextResponse.json(
+        { error: "Ya existe una cuenta con ese correo" },
+        { status: 409 }
+      )
+    }
+
+    // Encriptar contraseña
+    const passwordHash = await bcrypt.hash(password, 12)
+
+    // Crear usuario con rol CLIENTE por defecto
+    const nuevoUsuario = await prisma.usuario.create({
+      data: {
+        nombre: name,
+        correo: email,
+        password: passwordHash,
+        telefono: telefono,
+        rol: "CLIENTE",
+      },
+    })
+
+    return NextResponse.json(
+      {
+        message: "Usuario registrado exitosamente",
+        user: {
+          id: nuevoUsuario.id,
+          nombre: nuevoUsuario.nombre,
+          correo: nuevoUsuario.correo,
+          telefono: nuevoUsuario.telefono,
+          rol: nuevoUsuario.rol,
+        },
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error("Error en registro:", error)
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    )
   }
 }
