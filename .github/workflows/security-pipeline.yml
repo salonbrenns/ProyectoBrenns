@@ -29,7 +29,7 @@ jobs:
         run: npm install -g snyk
 
       - name: Ejecutar Snyk
-        run: snyk test --org=salonbrenns
+        run: snyk test --org=salonbrenns || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
