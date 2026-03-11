@@ -72,13 +72,16 @@ export default function ServiciosPage() {
         {/* CONTENIDO PRINCIPAL - Ahora ocupa todo el ancho */}
         <section aria-label="Lista de servicios disponibles">
           
-          {/* Estado: Cargando */}
-          {cargando && (
-            <div className="flex flex-col justify-center items-center py-40">
+         {/* Estado: Cargando */}
+         {cargando && (
+           <div className="flex flex-col justify-center items-center py-40">
+             <div className="relative">
               <Loader2 className="w-16 h-16 text-pink-400 animate-spin mb-4" />
-              <p className="text-pink-600 font-medium animate-pulse">Preparando algo especial para ti...</p>
+              <Sparkles className="w-6 h-6 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
             </div>
-          )}
+            <p className="text-pink-600 font-medium animate-pulse">Preparando algo especial para ti...</p>
+            </div>
+)}
 
           {/* Grid de servicios: 4 columnas en pantallas grandes */}
           {!cargando && (

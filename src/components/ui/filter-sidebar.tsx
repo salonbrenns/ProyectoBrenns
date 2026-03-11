@@ -12,6 +12,7 @@ interface FilterSidebarProps {
 }
 
 export default function FilterSidebar({
+  title,
   busqueda,
   setBusqueda,
   categoriasDisponibles,
@@ -20,10 +21,16 @@ export default function FilterSidebar({
   limpiarFiltros,
 }: FilterSidebarProps) {
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-4 border border-pink-100 mb-8 w-full">
+    <div className="bg-white rounded-3xl shadow-lg p-6 border border-pink-100 mb-8 w-full">
+      {/* Título de la sección con el icono Filter */}
+      <div className="flex items-center gap-2 mb-4 text-gray-800">
+        <Filter className="w-5 h-5 text-pink-600" />
+        <h3 className="font-bold text-lg">{title}</h3>
+      </div>
+
       <div className="flex flex-col md:flex-row items-center gap-4">
         
-        {/* BUSCADOR - Toma más espacio */}
+        {/* BUSCADOR */}
         <div className="relative flex-grow w-full md:w-auto">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -35,7 +42,7 @@ export default function FilterSidebar({
           />
         </div>
 
-        {/* SELECT DE CATEGORÍAS (Horizontal) */}
+        {/* SELECT DE CATEGORÍAS */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {categoriasDisponibles.map((categoria) => {
             const isSelected = categoriasSeleccionadas.includes(categoria);
@@ -55,7 +62,7 @@ export default function FilterSidebar({
           })}
         </div>
 
-        {/* BOTÓN LIMPIAR - Icono para ahorrar espacio */}
+        {/* BOTÓN LIMPIAR */}
         {(busqueda || categoriasSeleccionadas.length > 0) && (
           <button
             onClick={limpiarFiltros}

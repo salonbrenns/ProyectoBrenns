@@ -73,40 +73,29 @@ export default function PoliticasPage() {
         </div>
       )}
 
-      {tab === "politicas" && (
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button className="flex items-center gap-2 bg-pink-600 text-white font-bold px-4 py-2 rounded-full hover:bg-pink-700 transition text-sm">
-              <Plus className="w-4 h-4" /> Nueva política
-            </button>
+  {tab === "politicas" && (
+  <div className="space-y-4">
+    {/* ... resto del código ... */}
+    {[
+      { titulo: "Política de privacidad", icono: <FileText className="w-6 h-6 text-blue-500" /> },
+      { titulo: "Términos y condiciones", icono: <FileText className="w-6 h-6 text-green-500" /> },
+      // ... etc
+    ].map(({ titulo, icono }) => (
+      <div key={titulo} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gray-50 rounded-lg">
+            {icono} {/* Aquí usas el componente FileText */}
           </div>
-
-          {[
-            { titulo: "Política de privacidad",         icono: "🔒" },
-            { titulo: "Términos y condiciones",         icono: "📋" },
-            { titulo: "Política de devoluciones",       icono: "↩️" },
-            { titulo: "Política de cancelaciones",      icono: "❌" },
-          ].map(({ titulo, icono }) => (
-            <div key={titulo} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{icono}</span>
-                <div>
-                  <p className="font-semibold text-gray-800">{titulo}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Sin contenido — haz clic en editar para agregar</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="flex items-center gap-1.5 px-3 py-2 border border-pink-200 text-pink-600 rounded-xl hover:bg-pink-50 transition text-xs font-semibold">
-                  <Edit className="w-3.5 h-3.5" /> Editar
-                </button>
-                <button className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+          <div>
+            <p className="font-semibold text-gray-800">{titulo}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Sin contenido — haz clic en editar para agregar</p>
+          </div>
         </div>
-      )}
+        {/* ... botones de editar y borrar ... */}
+      </div>
+    ))}
+  </div>
+)}
 
       <p className="text-xs text-orange-500 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
         ⚠️ Esta sección está en desarrollo. Los cambios aún no se guardan ni se muestran en el frontend.

@@ -43,6 +43,7 @@ export default function CitasTable({
 }) {
   const router     = useRouter()
   const pathname   = usePathname()
+  const searchParams = useSearchParams()
   const [cambiando, setCambiando] = useState<number | null>(null)
 
   const aplicarFiltro = (key: string, value: string) => {

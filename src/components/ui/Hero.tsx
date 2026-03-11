@@ -8,7 +8,12 @@ export default function Hero() {
         
         {/* Text Content */}
         <div className="space-y-6">
-         
+          {/* Usamos el icono Sparkles aquí para una etiqueta decorativa */}
+          <div className="flex items-center gap-2 text-pink-600 bg-pink-50 w-fit px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider">
+            <Sparkles className="w-4 h-4" />
+            <span>Excelencia en Belleza</span>
+          </div>
+
           <h2 className="text-5xl md:text-6xl font-bold text-gray-800 leading-tight">
             Tu Belleza,<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-pink-700">
@@ -16,9 +21,7 @@ export default function Hero() {
             </span>
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed">
-            Academia Brenn´s tiene como objetivo principal, educar con excelencia a las Manicuristas y Pedicuristas de Huejutla y sus Alrededores.
-Además contamos con venta de material, a un costo accesible pero de excelente calidad.
-Somos tu mejor opción.
+            Academia Brenn&apos;s tiene como objetivo principal, educar con excelencia a las Manicuristas y Pedicuristas de Huejutla y sus Alrededores. Además contamos con venta de material, a un costo accesible pero de excelente calidad. Somos tu mejor opción.
           </p>
           <div className="flex flex-wrap gap-4">
             <button className="bg-gradient-to-r from-pink-500 to-pink-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-xl transition transform hover:scale-105">
@@ -39,6 +42,7 @@ Somos tu mejor opción.
             width={800}
             height={800}
             className="w-full h-full object-contain" 
+            priority
           />
 
           {/* Decoración */}

@@ -23,8 +23,7 @@ export async function GET() {
         precio: Number(s.precio),
       }))
     })
-  } catch (err) {
+  } catch (_err) { // <--- Cambiado de 'err' a '_err'
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }
-

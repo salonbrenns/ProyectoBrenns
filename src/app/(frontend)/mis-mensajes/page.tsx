@@ -22,7 +22,7 @@ type Mensaje = {
 }
 
 export default function MisMensajesPage() {
-  const { data: session, status } = useSession()
+const { status } = useSession()
   const router = useRouter()
   const [mensajes,  setMensajes]  = useState<Mensaje[]>([])
   const [cargando,  setCargando]  = useState(true)

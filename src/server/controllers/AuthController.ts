@@ -1,12 +1,11 @@
-// Ejemplo de controlador
-// Reemplaza esto con tu lógica real
-
+// src/server/controllers/AuthController.ts
 import { ApiResponse, Usuario } from '@/types';
 
 export class AuthController {
-  static async login(email: string, password: string): Promise<ApiResponse<{ user: Usuario; token: string }>> {
+  // Usamos "_" antes del nombre de la variable para decirle a TS que sabemos que no se usa aún
+  static async login(_email: string, _password: string): Promise<ApiResponse<{ user: Usuario; token: string }>> {
     try {
-      // TODO: Implementar lógica de login
+      // TODO: Implementar lógica de login real con Prisma y bcrypt
       return {
         success: true,
         data: {
@@ -14,7 +13,7 @@ export class AuthController {
           token: '',
         },
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         error: 'Error al iniciar sesión',
@@ -22,14 +21,14 @@ export class AuthController {
     }
   }
 
-  static async register(usuario: Partial<Usuario>, password: string): Promise<ApiResponse<Usuario>> {
+  static async register(_usuario: Partial<Usuario>, _password: string): Promise<ApiResponse<Usuario>> {
     try {
-      // TODO: Implementar lógica de registro
+      // TODO: Implementar lógica de registro real
       return {
         success: true,
         data: {} as Usuario,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         error: 'Error al registrar usuario',

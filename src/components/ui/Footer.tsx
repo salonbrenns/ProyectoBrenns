@@ -6,7 +6,8 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-3 gap-8">
           <div>
-            <h4 className="text-2xl font-bold mb-4">BRENN'S</h4>
+            {/* Corregido: BRENN'S -> BRENN&apos;S */}
+            <h4 className="text-2xl font-bold mb-4">BRENN&apos;S</h4>
             <p className="text-gray-400">
               Somos tu mejor opción en belleza y educación profesional en Huejutla.
             </p>
@@ -41,7 +42,8 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>© 2025 Brenn's. Todos los derechos reservados.</p>
+          {/* Corregido: Brenn's -> Brenn&apos;s */}
+          <p>© 2025 Brenn&apos;s. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

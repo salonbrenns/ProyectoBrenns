@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Calendar, Mail, Phone, Edit2, Heart, Clock, CreditCard } from "lucide-react"
 import Breadcrumb from "@/components/Breadcrumb"
@@ -10,7 +9,6 @@ import EditarPerfilModal from "@/components/ui/EditarPerfilModal"
 
 export default function PerfilPage() {
   const { data: session, status } = useSession()
-  const router = useRouter()
   const [modalAbierto, setModalAbierto] = useState(false)
   const [datosLocales, setDatosLocales] = useState<{
     nombre?: string
@@ -18,12 +16,7 @@ export default function PerfilPage() {
     telefono?: string | null
   }>({})
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login?next=/perfil")
-    }
-  }, [status, router])
-
+  
   if (status === "loading") {
     return (
       <main className="min-h-screen flex items-center justify-center bg-pink-50">
@@ -40,17 +33,14 @@ export default function PerfilPage() {
   // Usar datos locales si se actualizaron, sino los de la sesión
   const nombre = datosLocales.nombre ?? session.user?.name ?? "Usuario"
   const correo = datosLocales.correo ?? session.user?.email ?? ""
-  const telefono = datosLocales.telefono ?? (session.user as any)?.telefono ?? "No proporcionado"
+  const telefono = datosLocales.telefono ?? (session.user as { telefono?: string })?.telefono ?? "No proporcionado" 
   const primerLetra = nombre.charAt(0).toUpperCase()
   const fechaRegistro = new Date().toLocaleDateString("es-MX", {
     month: "long",
     year: "numeric",
   })
 
-  const handleLogout = async () => {
-    await signOut({ redirect: false })
-    router.push("/login")
-  }
+
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-8 sm:py-12">

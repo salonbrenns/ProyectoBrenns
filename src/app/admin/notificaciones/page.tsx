@@ -204,8 +204,7 @@ export default function NotificacionesPage() {
 
                         {/* Notas */}
                         {cita.notas && (
-                          <p className="text-xs text-gray-400 italic">"{cita.notas}"</p>
-                        )}
+                          <p className="text-xs text-gray-400 italic">&quot;{cita.notas}&quot;</p>)}
                       </div>
 
                       {/* Botón mensaje */}

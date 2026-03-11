@@ -5,6 +5,14 @@ import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
 
+// Definimos una interfaz para el usuario que retorna authorize
+interface CustomUser {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -56,12 +64,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           data: { intentos_fallidos: 0 },
         })
 
+        // Retornamos el objeto con el tipo esperado
         return {
           id: String(usuario.id),
           name: usuario.nombre,
           email: usuario.correo,
           role: usuario.rol,
-        }
+        } as CustomUser
       },
     }),
   ],
@@ -69,14 +78,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = (user as any).role
+        // Casteamos user a CustomUser de forma segura
+        const u = user as CustomUser
+        token.id = u.id
+        token.role = u.role
       }
       return token
     },
     async session({ session, token }) {
-      session.user.id = token.id as string
-      session.user.role = token.role as string
+      if (session.user) {
+        session.user.id = token.id as string
+        // @ts-ignore (Opcional si no tienes el archivo .d.ts configurado aún)
+        session.user.role = token.role as string
+      }
       return session
     },
   },

@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       } 
     })
   } catch (err) {
+    console.error("Error en el proceso de Login:", err);
     return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 })
   }
 }

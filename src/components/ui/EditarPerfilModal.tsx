@@ -3,6 +3,14 @@ import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { X, Eye, EyeOff, User, Mail, Phone, Lock } from "lucide-react"
 
+// 1. Definimos la interfaz para extender el usuario de NextAuth
+interface CustomUser {
+  name?: string | null
+  email?: string | null
+  image?: string | null
+  telefono?: string | null
+}
+
 interface EditarPerfilModalProps {
   onClose: () => void
   onActualizado: (datos: { nombre: string; correo: string; telefono?: string | null }) => void
@@ -14,15 +22,18 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
   const { data: session, update } = useSession()
   const [tab, setTab] = useState<Tab>("datos")
 
-  // Datos personales
-  const [nombre, setNombre] = useState(session?.user?.name || "")
-  const [correo, setCorreo] = useState(session?.user?.email || "")
-  const [telefono, setTelefono] = useState((session?.user as any)?.telefono || "")
+  // Casteo seguro para evitar el error de 'any'
+  const user = session?.user as CustomUser | undefined
+
+  // Estados de Datos personales
+  const [nombre, setNombre] = useState(user?.name || "")
+  const [correo, setCorreo] = useState(user?.email || "")
+  const [telefono, setTelefono] = useState(user?.telefono || "")
   const [loadingDatos, setLoadingDatos] = useState(false)
   const [errorDatos, setErrorDatos] = useState<string | null>(null)
   const [exitoDatos, setExitoDatos] = useState(false)
 
-  // Contraseña
+  // Estados de Contraseña
   const [passwordActual, setPasswordActual] = useState("")
   const [passwordNueva, setPasswordNueva] = useState("")
   const [passwordConfirm, setPasswordConfirm] = useState("")
@@ -57,8 +68,9 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
       onActualizado({ nombre, correo, telefono })
 
       setTimeout(() => setExitoDatos(false), 3000)
-    } catch (err: any) {
-      setErrorDatos(err.message)
+    } catch (err) {
+      const mensaje = err instanceof Error ? err.message : "Error inesperado"
+      setErrorDatos(mensaje)
     } finally {
       setLoadingDatos(false)
     }
@@ -85,7 +97,7 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
     try {
       const res = await fetch("/api/usuario/password", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Type": "application/json" },
         body: JSON.stringify({ passwordActual, passwordNueva }),
       })
       const data = await res.json()
@@ -96,8 +108,9 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
       setPasswordNueva("")
       setPasswordConfirm("")
       setTimeout(() => setExitoPass(false), 3000)
-    } catch (err: any) {
-      setErrorPass(err.message)
+    } catch (err) {
+      const mensaje = err instanceof Error ? err.message : "Error inesperado"
+      setErrorPass(mensaje)
     } finally {
       setLoadingPass(false)
     }
@@ -139,7 +152,6 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Tab: Datos personales */}
           {tab === "datos" && (
             <>
               <div>
@@ -182,12 +194,8 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
                 </div>
               </div>
 
-              {errorDatos && (
-                <p className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-lg">{errorDatos}</p>
-              )}
-              {exitoDatos && (
-                <p className="text-green-600 text-sm text-center bg-green-50 p-2 rounded-lg">✓ Datos actualizados correctamente</p>
-              )}
+              {errorDatos && <p className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-lg">{errorDatos}</p>}
+              {exitoDatos && <p className="text-green-600 text-sm text-center bg-green-50 p-2 rounded-lg">✓ Datos actualizados correctamente</p>}
 
               <button
                 onClick={handleGuardarDatos}
@@ -199,15 +207,14 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
             </>
           )}
 
-          {/* Tab: Contraseña */}
           {tab === "password" && (
             <>
               {[
-                { label: "Contraseña actual", value: passwordActual, setter: setPasswordActual, show: showActual, toggle: () => setShowActual(!showActual) },
-                { label: "Nueva contraseña", value: passwordNueva, setter: setPasswordNueva, show: showNueva, toggle: () => setShowNueva(!showNueva) },
-                { label: "Confirmar nueva contraseña", value: passwordConfirm, setter: setPasswordConfirm, show: showNueva, toggle: () => setShowNueva(!showNueva) },
-              ].map(({ label, value, setter, show, toggle }) => (
-                <div key={label}>
+                { id: 'pa', label: "Contraseña actual", value: passwordActual, setter: setPasswordActual, show: showActual, toggle: () => setShowActual(!showActual) },
+                { id: 'pn', label: "Nueva contraseña", value: passwordNueva, setter: setPasswordNueva, show: showNueva, toggle: () => setShowNueva(!showNueva) },
+                { id: 'pc', label: "Confirmar nueva contraseña", value: passwordConfirm, setter: setPasswordConfirm, show: showNueva, toggle: () => setShowNueva(!showNueva) },
+              ].map(({ id, label, value, setter, show, toggle }) => (
+                <div key={id}>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -225,12 +232,8 @@ export default function EditarPerfilModal({ onClose, onActualizado }: EditarPerf
                 </div>
               ))}
 
-              {errorPass && (
-                <p className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-lg">{errorPass}</p>
-              )}
-              {exitoPass && (
-                <p className="text-green-600 text-sm text-center bg-green-50 p-2 rounded-lg">✓ Contraseña actualizada correctamente</p>
-              )}
+              {errorPass && <p className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-lg">{errorPass}</p>}
+              {exitoPass && <p className="text-green-600 text-sm text-center bg-green-50 p-2 rounded-lg">✓ Contraseña actualizada correctamente</p>}
 
               <button
                 onClick={handleCambiarPassword}

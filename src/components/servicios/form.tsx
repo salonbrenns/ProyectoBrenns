@@ -106,8 +106,10 @@ export default function ServicioForm({ servicio }: Props) {
 
       router.push('/admin/servicios')
       router.refresh()
-    } catch (err: any) {
-      setErrorGeneral(err.message || 'Error inesperado')
+   } catch (err) {
+      // Verificamos si es un objeto de error estándar
+      const mensaje = err instanceof Error ? err.message : 'Error inesperado'
+      setErrorGeneral(mensaje)
     } finally {
       setGuardando(false)
     }

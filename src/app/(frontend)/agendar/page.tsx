@@ -3,7 +3,7 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSession } from "next-auth/react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import AuthGuard from "@/components/ui/AuthGuard"
 import Breadcrumb from "@/components/Breadcrumb"
 import {
@@ -30,7 +30,7 @@ type Horario = {
 }
 
 function AgendarContenido() {
-  const { data: session } = useSession()
+  useSession()
   const searchParams = useSearchParams()
   const servicioId   = searchParams.get("servicioId")
 
@@ -114,8 +114,8 @@ function AgendarContenido() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al confirmar")
       setExito(true)
-    } catch (err: any) {
-      setErrorPago(err.message)
+    } catch (err: unknown) {
+     setErrorPago(err instanceof Error ? err.message : "Error al confirmar")
     } finally {
       setPagando(false)
     }

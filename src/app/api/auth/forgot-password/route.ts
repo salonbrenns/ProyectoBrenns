@@ -16,6 +16,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Instrucciones enviadas correctamente" }, { status: 200 });
 
   } catch (error) {
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
-  }
-}
+  console.error("Error en forgot-password:", error); // Ahora sí se usa la variable
+  return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+}}

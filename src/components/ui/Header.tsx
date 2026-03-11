@@ -9,13 +9,46 @@ import { useRouter } from "next/navigation"
 
 export default function Header() {
   const [cantidadCarrito, setCantidadCarrito] = useState(0)
-  const [menuOpen,  setMenuOpen]  = useState(false)
-  const [noLeidos,  setNoLeidos]  = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [noLeidos, setNoLeidos] = useState(0)
   const { data: session, status } = useSession()
   const router = useRouter()
   const autenticado = status === "authenticated"
 
-  // Cargar mensajes no leídos
+  // 1. Sincronizar la cantidad del carrito con el localStorage
+  useEffect(() => {
+    const calcularTotal = () => {
+      const stored = localStorage.getItem("nail_store_cart")
+      if (stored) {
+        try {
+          const carrito = JSON.parse(stored)
+          const total = carrito.reduce((acc: number, item: { cantidad: number }) => acc + item.cantidad, 0)
+          setCantidadCarrito(total)
+        } catch (error) {
+          console.error("Error al leer el carrito:", error)
+          setCantidadCarrito(0)
+        }
+      } else {
+        setCantidadCarrito(0)
+      }
+    }
+
+    // Calcular al montar el componente
+    calcularTotal()
+
+    // Escuchar cambios desde otros componentes/pestañas
+    window.addEventListener('storage', calcularTotal)
+    
+    // Crear un evento personalizado para actualizaciones en la misma pestaña
+    window.addEventListener('cart-updated', calcularTotal)
+
+    return () => {
+      window.removeEventListener('storage', calcularTotal)
+      window.removeEventListener('cart-updated', calcularTotal)
+    }
+  }, [])
+
+  // 2. Cargar mensajes no leídos
   useEffect(() => {
     if (!autenticado) return
     fetch("/api/usuario/mensajes")
@@ -107,7 +140,6 @@ export default function Header() {
               </>
             )}
 
-            {/* Si NO está autenticado */}
             {!autenticado && status !== "loading" && (
               <Link href="/login"
                 className="hidden md:block bg-pink-600 hover:bg-pink-700 text-white font-bold px-6 py-2 rounded-full shadow-lg hover:shadow-xl transition transform hover:scale-105 text-sm">

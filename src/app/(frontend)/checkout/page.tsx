@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import AuthGuard from "@/components/ui/AuthGuard"
 import Breadcrumb from "@/components/Breadcrumb"
 import { CreditCard, Lock, CheckCircle, Package } from "lucide-react"
@@ -24,7 +23,6 @@ const ENVIO_GRATIS_DESDE = 150000
 
 export default function CheckoutPage() {
   const { data: session } = useSession()
-  const router = useRouter()
   const [items, setItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(false)
   const [exito, setExito] = useState(false)
@@ -48,7 +46,7 @@ export default function CheckoutPage() {
         nombre: partes[0] || "",
         apellido: partes.slice(1).join(" ") || "",
         correo: session.user.email || "",
-        telefono: (session.user as any).telefono || "",
+       telefono: (session.user as { telefono?: string }).telefono || "",
       }))
     }
   }, [session])
@@ -98,8 +96,8 @@ export default function CheckoutPage() {
       window.dispatchEvent(new Event("carrito-actualizado"))
       setExito(true)
 
-    } catch (err: any) {
-      setGeneralError(err.message)
+    } catch (err: unknown) {
+  setGeneralError(err instanceof Error ? err.message : "Error al procesar el pedido")
     } finally {
       setLoading(false)
     }
@@ -115,7 +113,7 @@ export default function CheckoutPage() {
               <CheckCircle className="w-14 h-14 text-green-500" />
             </div>
             <h2 className="text-3xl font-bold text-gray-800 mb-4">¡Pedido realizado!</h2>
-            <p className="text-gray-600 mb-2">Gracias por tu compra en <span className="text-pink-600 font-bold">Brenn's</span></p>
+            <p className="text-gray-600 mb-2">Gracias por tu compra en <span className="text-pink-600 font-bold">Brenn&apos;s</span></p>
             <p className="text-gray-500 text-sm mb-8">Recibirás un correo con los detalles de tu pedido.</p>
             <div className="flex gap-4 justify-center">
               <Link href="/mis-cursos" className="bg-pink-600 text-white font-bold px-8 py-3 rounded-full hover:bg-pink-700 transition">

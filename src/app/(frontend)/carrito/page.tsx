@@ -50,6 +50,12 @@ type CartItem = {
 
 function CarritoClient() {
   const [items, setItems] = useState<CartItem[]>([])
+ 
+    const actualizarContador = (carrito: CartItem[]) => {
+    const total = carrito.reduce((sum, item) => sum + item.cantidad, 0)
+    const contador = document.getElementById("contador-carrito")
+    if (contador) contador.textContent = total.toString()
+  }
 
   useEffect(() => {
     const stored = localStorage.getItem("nail_store_cart")
@@ -60,12 +66,7 @@ function CarritoClient() {
     }
   }, [])
 
-  const actualizarContador = (carrito: CartItem[]) => {
-    const total = carrito.reduce((sum, item) => sum + item.cantidad, 0)
-    const contador = document.getElementById("contador-carrito")
-    if (contador) contador.textContent = total.toString()
-  }
-
+  
   const actualizarCantidad = (id: number, delta: number) => {
     setItems(prev => {
       const nuevos = prev

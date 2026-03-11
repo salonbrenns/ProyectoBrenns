@@ -2,6 +2,7 @@
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import CitasTable from '@/components/citas/table'
+import { Prisma, EstadoCita } from '@prisma/client' // Importamos los tipos generados
 
 export const metadata: Metadata = {
   title: 'Citas',
@@ -14,11 +15,18 @@ export default async function CitasPage({
   searchParams: Promise<{ estado?: string; fecha?: string }>
 }) {
   const params = await searchParams
-  const estado = params.estado || ''
+  const estado = params.estado as EstadoCita | undefined // Cast seguro al Enum de tu schema
   const fecha  = params.fecha  || ''
 
-  const where: any = {}
-  if (estado) where.estado = estado
+  // 1. Tipado correcto: Usamos 'Prisma.CitaWhereInput' en lugar de 'any'
+  const where: Prisma.CitaWhereInput = {}
+
+  // 2. Filtro de estado (solo si es un valor válido del Enum)
+  if (estado) {
+    where.estado = estado
+  }
+  
+  // 3. Filtro de fecha
   if (fecha) {
     const fechaInicio = new Date(`${fecha}T00:00:00.000Z`)
     const fechaFin    = new Date(`${fecha}T23:59:59.999Z`)
@@ -28,21 +36,25 @@ export default async function CitasPage({
   const citasRaw = await prisma.cita.findMany({
     where,
     include: {
+      // Según tu schema, usuario es opcional (usuario_id Int?)
       usuario:  { select: { nombre: true, correo: true, telefono: true } },
       servicio: { select: { nombre: true, precio: true } },
     },
     orderBy: [{ fecha: 'desc' }, { hora: 'asc' }],
   })
 
+  // 4. Mapeo de datos para el componente cliente
   const citas = citasRaw.map(c => ({
     ...c,
-    fecha:           c.fecha.toISOString(),
-    createdAt:       c.createdAt.toISOString(),
+    fecha:     c.fecha.toISOString(),
+    createdAt: c.createdAt.toISOString(),
     servicio: {
       ...c.servicio,
+      // En tu schema el precio es Float, Number() asegura compatibilidad
       precio: Number(c.servicio.precio),
     },
-      usuario: c.usuario ?? null,
+    // Manejo de usuario nulo (para citas sin usuario registrado)
+    usuario: c.usuario ?? null,
   }))
 
   return (
@@ -54,7 +66,11 @@ export default async function CitasPage({
         </p>
       </div>
 
-      <CitasTable citas={citas} estadoFiltro={estado} fechaFiltro={fecha} />
+      <CitasTable 
+        citas={citas} 
+        estadoFiltro={estado || ''} 
+        fechaFiltro={fecha} 
+      />
     </div>
   )
 }
