@@ -24,9 +24,9 @@ export async function GET() {
     prisma.cita.count({
       where: { fecha: { gte: inicioMes, lte: finMes } }
     }),
-    prisma.pedido.count({
-      where: { createdAt: { gte: inicioMes, lte: finMes } }
-    }),
+   prisma.pedido.count({
+  where: { fecha_pedido: { gte: inicioMes, lte: finMes } }
+}),
     prisma.usuario.count({
       where: { rol: "CLIENTE" }
     }),
