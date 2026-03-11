@@ -43,11 +43,26 @@ export async function GET(req: Request) {
   const horasOcupadas = new Set(citasExistentes.map(c => c.hora))
   const horasBloq     = new Set(horasBloqueadas.map(h => h.hora))
 
-  const resultado = horariosActivos.map(h => ({
-    id:         h.id,
-    hora:       h.hora,
-    disponible: !horasOcupadas.has(h.hora) && !horasBloq.has(h.hora),
-  }))
+  // Verificar si es hoy para filtrar horas pasadas
+  const ahora    = new Date()
+  const ahoraStr = ahora.toLocaleDateString("en-CA") // "2026-03-10"
+  const esHoy    = fechaStr === ahoraStr
+
+  const resultado = horariosActivos.map(h => {
+    let horaYaPaso = false
+    if (esHoy) {
+      const [horaH, minH] = h.hora.split(":").map(Number)
+      const horaActual    = ahora.getHours()
+      const minActual     = ahora.getMinutes()
+      horaYaPaso = horaH < horaActual || (horaH === horaActual && minH <= minActual)
+    }
+
+    return {
+      id:         h.id,
+      hora:       h.hora,
+      disponible: !horasOcupadas.has(h.hora) && !horasBloq.has(h.hora) && !horaYaPaso,
+    }
+  })
 
   return NextResponse.json(resultado)
 }
