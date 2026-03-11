@@ -25,6 +25,9 @@ jobs:
       - name: Ejecutar ESLint Security
         run: npx eslint . || true
 
+      - name: Instalar Snyk
+        run: npm install -g snyk
+
       - name: Ejecutar Snyk
         run: snyk test
         env:
