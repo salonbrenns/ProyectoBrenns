@@ -21,20 +21,19 @@ type CartItem = {
 
 export default function CarritoPage() {
   // Estado movido aquí para que el título pueda acceder al contador
-  const [items, setItems] = useState<CartItem[]>([])
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [items, setItems] = useState<CartItem[]>(() => {
+  if (typeof window === "undefined") return []
+  const stored = localStorage.getItem("nail_store_cart")
+  return stored ? JSON.parse(stored) : []
+})
+const [isLoaded] = useState(true)
 
   // Calculamos el total de artículos basado en el estado
   const totalArticulos = useMemo(() => 
     items.reduce((sum, item) => sum + item.cantidad, 0), 
   [items])
 
- useEffect(() => {
-  const stored = localStorage.getItem("nail_store_cart")
-  const parsed = stored ? JSON.parse(stored) : []
-  setItems(parsed)
-  setIsLoaded(true)
-}, [])
+
 
   return (
     <AuthGuard>

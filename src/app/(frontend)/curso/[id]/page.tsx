@@ -1,7 +1,7 @@
 // src/app/curso/[id]/page.tsx
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar, Clock, MapPin, User, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react"
+import { Calendar, Clock, User, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react"
 
 const cursosData = {
   "1": {

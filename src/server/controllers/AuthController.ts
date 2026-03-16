@@ -1,4 +1,5 @@
 // src/server/controllers/AuthController.ts
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ApiResponse, Usuario } from '@/types';
 
 export class AuthController {
