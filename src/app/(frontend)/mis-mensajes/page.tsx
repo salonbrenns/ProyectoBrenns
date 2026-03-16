@@ -86,15 +86,16 @@ const { status } = useSession()
       ) : (
         <div className="space-y-4">
           {mensajes.map(m => (
-            <div
-              key={m.id}
-              onClick={() => { if (!m.leido) marcarLeido(m.id) }}
-              className={`rounded-2xl border-2 p-5 cursor-pointer transition-all ${
-                m.leido
-                  ? "border-gray-100 bg-white"
-                  : "border-pink-200 bg-pink-50 shadow-sm"
-              }`}
-            >
+  <button
+    key={m.id}
+    type="button" // Importante para que no actúe como submit
+    onClick={() => { if (!m.leido) marcarLeido(m.id) }}
+    className={`w-full text-left rounded-2xl border-2 p-5 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-pink-400 ${
+      m.leido
+        ? "border-gray-100 bg-white"
+        : "border-pink-200 bg-pink-50 shadow-sm"
+    }`}
+  >
               {/* Estado */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">

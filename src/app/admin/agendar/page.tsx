@@ -317,13 +317,24 @@ export default function AdminAgendarPage() {
               </h2>
 
               {/* Toggle sin usuario */}
-              <label className="flex items-center gap-3 cursor-pointer">
-                <div onClick={() => { setSinUsuario(!sinUsuario); setUsuarioSel(null); setBusqueda("") }}
-                  className={`w-10 h-6 rounded-full transition-colors ${sinUsuario ? "bg-pink-600" : "bg-gray-200"}`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow mt-0.5 transition-transform ${sinUsuario ? "translate-x-4" : "translate-x-0.5"}`} />
-                </div>
-                <span className="text-sm font-medium text-gray-700">Cliente sin cuenta (walk-in / teléfono)</span>
-              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+  <div 
+    role="checkbox"
+    aria-checked={sinUsuario}
+    tabIndex={0}
+    onClick={() => { setSinUsuario(!sinUsuario); setUsuarioSel(null); setBusqueda("") }}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setSinUsuario(!sinUsuario); setUsuarioSel(null); setBusqueda("");
+      }
+    }}
+    className={`w-10 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pink-400 ${sinUsuario ? "bg-pink-600" : "bg-gray-200"}`}
+  >
+    <div className={`w-5 h-5 bg-white rounded-full shadow mt-0.5 transition-transform ${sinUsuario ? "translate-x-4" : "translate-x-0.5"}`} />
+  </div>
+  <span className="text-sm font-medium text-gray-700">Cliente sin cuenta (walk-in / teléfono)</span>
+</label>
 
               {/* Buscar usuario registrado */}
               {!sinUsuario && (
