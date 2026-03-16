@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react"
 import { Clock, Plus, Trash2, Loader2, Check } from "lucide-react"
-
+export const dynamic = 'force-dynamic'
 const DIAS = [
   { id: 1, label: "Lunes" },
   { id: 2, label: "Martes" },

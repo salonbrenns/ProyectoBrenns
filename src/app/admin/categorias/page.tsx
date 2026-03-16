@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import MarcaTable from '@/components/categorias/table'
 import Search from '@/components/search';
 import { Suspense } from 'react'
+export const dynamic = 'force-dynamic'
 
 // 1. Definimos la estructura de la categoría
 export interface Categoria {

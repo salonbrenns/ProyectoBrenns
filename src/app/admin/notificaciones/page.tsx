@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { Bell, Calendar, Clock, User, Phone, MessageSquare, CheckCircle, AlertCircle, Loader2, RefreshCw } from "lucide-react"
 import { format, isToday, isTomorrow, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
-
+export const dynamic = 'force-dynamic'
 type Cita = {
   id: number
   fecha: string

@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import ProductoTable from '@/components/productos/table'
 import Search from '@/components/search'
 import { prisma } from '@/lib/prisma'
-
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Productos',
   description: 'Administración de productos del salón',

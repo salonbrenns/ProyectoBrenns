@@ -1,8 +1,10 @@
 // src/app/admin/dias-bloqueados/page.tsx
+
+ 
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import DiasBloqueadosTable from '@/components/dias-bloqueados/table'
-
+export const dynamic = 'force-dynamic' 
 export const metadata: Metadata = {
   title: 'Días y horas bloqueadas',
   description: 'Gestión de fechas y horas sin servicio',

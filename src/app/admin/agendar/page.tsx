@@ -10,6 +10,8 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth,
          eachDayOfInterval, isBefore, isToday, isSameDay } from "date-fns"
 import { es } from "date-fns/locale"
 
+export const dynamic = 'force-dynamic'
+
 type Servicio = { id: number; nombre: string; precio: number; duracion: string }
 type Horario  = { id: number; hora: string; disponible: boolean }
 type Usuario  = { id: number; nombre: string; correo: string; telefono?: string }

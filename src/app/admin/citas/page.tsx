@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import CitasTable from '@/components/citas/table'
 import { Prisma, EstadoCita } from '@prisma/client' // Importamos los tipos generados
-
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Citas',
   description: 'Gestión de citas del salón',

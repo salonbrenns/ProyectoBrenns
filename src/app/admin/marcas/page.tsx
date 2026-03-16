@@ -4,7 +4,7 @@ import Search from '@/components/search'
 import { PrismaClient } from '@prisma/client'
 import { Suspense } from 'react'
 
-
+export const dynamic = 'force-dynamic'
 const prisma = new PrismaClient()
 
 export const metadata: Metadata = {

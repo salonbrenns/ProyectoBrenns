@@ -7,7 +7,7 @@ import {
   Legend, ResponsiveContainer, ReferenceLine, AreaChart, Area
 } from "recharts"
 import { TrendingUp, ShoppingBag, Calendar, Users, BarChart2, Table2, Calculator } from "lucide-react"
-
+export const dynamic = 'force-dynamic'
 // ─── PARÁMETROS DEL MODELO LOGÍSTICO ────────────────────────────────────────
 const V0 = 12500
 const K  = 48000
