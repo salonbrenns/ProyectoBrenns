@@ -1,12 +1,10 @@
-// Ejemplo de controlador
-// Reemplaza esto con tu lógica real
-
+// src/server/controllers/AuthController.ts
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ApiResponse, Usuario } from '@/types';
 
 export class AuthController {
-  static async login(email: string, password: string): Promise<ApiResponse<{ user: Usuario; token: string }>> {
+  static async login(_correo: string, _password: string): Promise<ApiResponse<{ user: Usuario; token: string }>> {
     try {
-      // TODO: Implementar lógica de login
       return {
         success: true,
         data: {
@@ -14,7 +12,7 @@ export class AuthController {
           token: '',
         },
       };
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Error al iniciar sesión',
@@ -22,14 +20,13 @@ export class AuthController {
     }
   }
 
-  static async register(usuario: Partial<Usuario>, password: string): Promise<ApiResponse<Usuario>> {
+  static async register(_datos: Partial<Usuario>, _password: string): Promise<ApiResponse<Usuario>> {
     try {
-      // TODO: Implementar lógica de registro
       return {
         success: true,
         data: {} as Usuario,
       };
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Error al registrar usuario',

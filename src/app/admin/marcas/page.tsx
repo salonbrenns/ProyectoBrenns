@@ -1,7 +1,10 @@
 import { Metadata } from 'next'
 import MarcaTable from '@/components/marcas/table'
 import Search from '@/components/search'
-import { prisma } from '@/lib/prisma' 
+import { prisma } from '@/lib/prisma'
+import { Suspense } from 'react'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Marcas',
@@ -9,7 +12,7 @@ export const metadata: Metadata = {
 }
 
 interface Props {
-  searchParams?: Promise<{  
+  searchParams?: Promise<{
     query?: string
     page?: string
   }>
@@ -18,7 +21,7 @@ interface Props {
 const ITEMS_PER_PAGE = 5
 
 export default async function MarcasPage({ searchParams }: Props) {
-  const params = await searchParams  
+  const params = await searchParams
   const query = params?.query || ''
   const currentPage = Number(params?.page) || 1
 
@@ -30,10 +33,10 @@ export default async function MarcasPage({ searchParams }: Props) {
 
   const marcas = await prisma.marca.findMany({
     select: {
-    id: true,
-    nombre: true,
-    activo: true,  
-  },
+      id: true,
+      nombre: true,
+      activo: true,
+    },
     where: { nombre: { contains: query, mode: 'insensitive' } },
     orderBy: { id: 'asc' },
     skip: (currentPage - 1) * ITEMS_PER_PAGE,
@@ -45,9 +48,13 @@ export default async function MarcasPage({ searchParams }: Props) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-pink-900">Marcas</h1>
       </div>
+
       <div className="flex items-center gap-4">
-        <Search placeholder="Buscar marcas..." />
+        <Suspense fallback={<div className="h-10 w-64 bg-gray-100 rounded-xl animate-pulse" />}>
+          <Search placeholder="Buscar marcas..." />
+        </Suspense>
       </div>
+
       <MarcaTable
         marcas={marcas}
         currentPage={currentPage}

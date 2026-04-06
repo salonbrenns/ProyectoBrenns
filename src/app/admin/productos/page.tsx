@@ -3,7 +3,7 @@ import ProductoTable from '@/components/productos/table'
 import ProductoFilter from '@/components/productos/filtroProduc'
 import Search from '@/components/search'
 import { prisma } from '@/lib/prisma'
-
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Productos',
   description: 'Administración de productos del salón',

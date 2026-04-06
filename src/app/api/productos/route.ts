@@ -13,6 +13,12 @@ export async function GET() {
         precio_venta: true,
         stock: true,
         activo: true,
+        imagen: true,
+        categoria: {
+          select: {
+            nombre: true
+          }
+        },
         marca: {
           select: {
             nombre: true

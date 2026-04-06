@@ -1,11 +1,9 @@
 'use client'
-
-import { useTransition, useState } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createProducto } from '@/lib/actionsproductos'
-import Image from 'next/image'
-import { ImageIcon, Loader2, Info } from 'lucide-react'
-
+import { Loader2, Info } from 'lucide-react'
+import ImageUpload from '@/../src/components/productos/ImageUpload'
 interface Marca {
   id: number
   nombre: string
@@ -24,13 +22,6 @@ export default function CreateProductoForm({
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [preview, setPreview] = useState<string | null>(null)
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPreview(URL.createObjectURL(file))
-  }
 
   return (
     <div className="w-full max-w-4xl rounded-2xl bg-white shadow-xl border border-rose-100 overflow-hidden">
@@ -53,7 +44,6 @@ export default function CreateProductoForm({
         }}
       >
         <div className="flex gap-0">
-          {/* ── Columna izquierda: campos ── */}
           <div className="flex-1 p-8 space-y-4">
             {/* Código + Nombre */}
             <div className="grid grid-cols-2 gap-4">
@@ -174,7 +164,6 @@ export default function CreateProductoForm({
               </div>
             </div>
 
-            {/* Stock + Activo */}
             <div className="flex items-end gap-4">
               <div className="flex-1 space-y-1">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -206,71 +195,22 @@ export default function CreateProductoForm({
             </div>
           </div>
 
-          {/* Divisor vertical */}
           <div className="w-px bg-rose-100 my-6" />
-
-          {/* ── Columna derecha: imagen ── */}
           <div className="w-64 flex-shrink-0 p-8 flex flex-col items-center gap-4">
-            <div className="w-full text-center">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                Imagen del Producto
-              </p>
+            
+            {/* se inserta el componente de carga múltiple */}
+            <ImageUpload/>
 
-              {/* Preview o placeholder */}
-              <div className="relative w-full aspect-square rounded-xl overflow-hidden border-2 border-dashed border-rose-200 bg-rose-50 flex items-center justify-center mb-3">
-                {preview ? (
-                  <>
-                    <Image
-                      src={preview}
-                      alt="Preview"
-                      fill
-                      className="object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setPreview(null)}
-                      className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full w-6 h-6 flex items-center justify-center shadow text-gray-500 hover:text-red-500 text-xs font-bold transition"
-                    >
-                      ✕
-                    </button>
-                  </>
-                ) : (
-                  <div className="text-center px-4">
-                    <ImageIcon className="w-10 h-10 text-rose-300 mx-auto mb-2" />
-                    <p className="text-xs text-gray-400">Sin imagen</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Botón de subida */}
-              <label className="block w-full cursor-pointer">
-                <span className="block w-full text-center text-sm font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg px-4 py-2 transition">
-                  {preview ? 'Cambiar imagen' : 'Subir imagen'}
-                </span>
-                <span className="block text-center text-xs text-gray-400 mt-1">
-                  JPG, PNG, WEBP
-                </span>
-                <input
-                  type="file"
-                  name="imagen"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-
-            {/* Info card decorativa */}
+           
             <div className="mt-auto w-full rounded-lg bg-amber-50 border border-amber-100 p-3">
               <p className="text-xs text-amber-700 leading-relaxed">
                 <Info className="w-3.5 h-3.5 inline-block align-middle mr-1 flex-shrink-0" />
-                Usa imágenes cuadradas de al menos <strong>400×400 px</strong> para mejor calidad.
+                Puedes subir hasta <strong>4 imágenes</strong> para el catálogo.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Footer con acciones */}
         <div className="flex justify-end gap-3 px-8 py-4 bg-gray-50 border-t border-gray-100">
           <button
             type="button"

@@ -1,43 +1,14 @@
-// src/app/carrito/page.tsx
-"use client"   // ← ESTO TIENE QUE ESTAR EN LA LÍNEA 1, SIN NADA ANTES
+"use client"
 
 import Image from "next/image"
 import Link from "next/link"
 import AuthGuard from "@/components/ui/AuthGuard"
 import Breadcrumb from "@/components/Breadcrumb"
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
 
 const ENVIO_GRATIS_DESDE = 150000
 const COSTO_ENVIO = 10000
-
-export default function CarritoPage() {
-  return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-white py-12">
-        <div className="max-w-6xl mx-auto px-6">
-        <Breadcrumb items={[
-          { label: "Catálogo", href: "/catalogo-privada" },
-          { label: "Carrito", href: "#", active: true }
-        ]} />
-
-        <div className="flex items-center gap-3 mb-10">
-          <ShoppingBag className="w-10 h-10 text-pink-600" />
-          <h1 className="text-4xl font-bold text-gray-800">
-            Tu Carrito de Compras (<span id="contador-carrito">0</span> Artículos)
-          </h1>
-        </div>
-
-        <div suppressHydrationWarning>
-          <CarritoClient />
-        </div>
-        </div>
-      </div>
-    </AuthGuard>
-  )
-}
-
-/* ====================== CLIENT COMPONENT ====================== */
-import { useState, useEffect } from "react"
 
 type CartItem = {
   id: number
@@ -48,58 +19,86 @@ type CartItem = {
   img: string
 }
 
-function CarritoClient() {
-  const [items, setItems] = useState<CartItem[]>([])
+export default function CarritoPage() {
+  // Estado movido aquí para que el título pueda acceder al contador
+  const [items, setItems] = useState<CartItem[]>(() => {
+  if (typeof window === "undefined") return []
+  const stored = localStorage.getItem("nail_store_cart")
+  return stored ? JSON.parse(stored) : []
+})
+const [isLoaded] = useState(true)
 
-  useEffect(() => {
-    const stored = localStorage.getItem("nail_store_cart")
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      setItems(parsed)
-      actualizarContador(parsed)
-    }
-  }, [])
+  // Calculamos el total de artículos basado en el estado
+  const totalArticulos = useMemo(() => 
+    items.reduce((sum, item) => sum + item.cantidad, 0), 
+  [items])
 
-  const actualizarContador = (carrito: CartItem[]) => {
-    const total = carrito.reduce((sum, item) => sum + item.cantidad, 0)
-    const contador = document.getElementById("contador-carrito")
-    if (contador) contador.textContent = total.toString()
-  }
 
+
+  return (
+    <AuthGuard>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-white py-12">
+        <div className="max-w-6xl mx-auto px-6">
+          <Breadcrumb items={[
+            { label: "Catálogo", href: "/catalogo-privada" },
+            { label: "Carrito", href: "#", active: true }
+          ]} />
+
+          <div className="flex items-center gap-3 mb-10">
+            <ShoppingBag className="w-10 h-10 text-pink-600" />
+            <h1 className="text-4xl font-bold text-gray-800">
+              Tu Carrito de Compras ({isLoaded ? totalArticulos : 0} Artículos)
+            </h1>
+          </div>
+
+          <div suppressHydrationWarning>
+            <CarritoClient items={items} setItems={setItems} totalArticulos={totalArticulos} />
+          </div>
+        </div>
+      </div>
+    </AuthGuard>
+  )
+}
+
+/* ====================== CLIENT COMPONENT ====================== */
+
+function CarritoClient({ 
+  items, 
+  setItems, 
+  totalArticulos 
+}: { 
+  items: CartItem[], 
+  setItems: React.Dispatch<React.SetStateAction<CartItem[]>>,
+  totalArticulos: number
+}) {
+  
   const actualizarCantidad = (id: number, delta: number) => {
-    setItems(prev => {
-      const nuevos = prev
-        .map(item => item.id === id ? { ...item, cantidad: Math.max(1, item.cantidad + delta) } : item)
-        .filter(item => item.cantidad > 0)
-      localStorage.setItem("nail_store_cart", JSON.stringify(nuevos))
-      actualizarContador(nuevos)
-      // Dispara evento para el header
-      window.dispatchEvent(new Event("carrito-actualizado"))
-      return nuevos
-    })
+    const nuevos = items
+      .map(item => item.id === id ? { ...item, cantidad: Math.max(1, item.cantidad + delta) } : item)
+      .filter(item => item.cantidad > 0)
+    
+    setItems(nuevos)
+    localStorage.setItem("nail_store_cart", JSON.stringify(nuevos))
+    window.dispatchEvent(new Event("carrito-actualizado"))
   }
 
   const eliminar = (id: number) => {
-    setItems(prev => {
-      const nuevos = prev.filter(item => item.id !== id)
-      localStorage.setItem("nail_store_cart", JSON.stringify(nuevos))
-      actualizarContador(nuevos)
-      window.dispatchEvent(new Event("carrito-actualizado"))
-      return nuevos
-    })
+    const nuevos = items.filter(item => item.id !== id)
+    setItems(nuevos)
+    localStorage.setItem("nail_store_cart", JSON.stringify(nuevos))
+    window.dispatchEvent(new Event("carrito-actualizado"))
   }
 
   const subtotal = items.reduce((acc, i) => acc + i.precio * i.cantidad, 0)
   const envio = subtotal >= ENVIO_GRATIS_DESDE ? 0 : COSTO_ENVIO
   const total = subtotal + envio
-  const totalArticulos = items.reduce((a, i) => a + i.cantidad, 0)
 
   if (items.length === 0) {
     return (
       <div className="text-center py-32">
         <ShoppingBag className="w-24 h-24 mx-auto text-pink-200 mb-6" />
         <p className="text-2xl font-semibold text-gray-600">Tu carrito está vacío</p>
-        <Link href="/catalogo" className="mt-6 inline-block bg-pink-600 text-white font-bold px-8 py-4 rounded-full">
+        <Link href="/catalogo-privada" className="mt-6 inline-block bg-pink-600 text-white font-bold px-8 py-4 rounded-full">
           Ir al Catálogo
         </Link>
       </div>

@@ -5,23 +5,51 @@ import {
   TagIcon,
   Squares2X2Icon,
   ShoppingBagIcon,
-  SparklesIcon,
+  SparklesIcon, // Ahora sí se usará abajo
   AcademicCapIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  ScissorsIcon,
+  BellIcon,
+  ChartBarIcon,
+  DocumentTextIcon,
+  ShieldCheckIcon,
+  CogIcon,
+  CreditCardIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
 const links = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
-  { name: 'Marcas', href: '/admin/marcas', icon: TagIcon },
-  { name: 'Categorías', href: '/admin/categorias', icon: Squares2X2Icon },
-  { name: 'Productos', href: '/admin/productos', icon: ShoppingBagIcon },
-  { name: 'Servicios', href: '/admin/servicios', icon: SparklesIcon },
-  { name: 'Cursos', href: '/admin/cursos', icon: AcademicCapIcon },
+  { name: 'Dashboard',      href: '/admin/dashboard',       icon: HomeIcon           },
+  { name: 'Marcas',         href: '/admin/marcas',          icon: TagIcon            },
+  { name: 'Categorías',     href: '/admin/categorias',      icon: Squares2X2Icon     },
+  { name: 'Productos',      href: '/admin/productos',       icon: ShoppingBagIcon    },
+  { name: 'Servicios',      href: '/admin/servicios',       icon: ScissorsIcon       }, 
+  { name: 'Agendar',        href: '/admin/agendar',         icon: CalendarDaysIcon   },
+  { name: 'Horarios',       href: '/admin/horarios',        icon: ClockIcon          },
+  { name: 'Citas',          href: '/admin/citas',           icon: CalendarDaysIcon   },
+  { name: 'Días Bloqueados', href: '/admin/dias-bloqueados', icon: CalendarDaysIcon   },
+  { name: 'Cursos',         href: '/admin/cursos',          icon: AcademicCapIcon    },
+  { name: 'Notificaciones', href: '/admin/notificaciones',  icon: BellIcon           }, 
+  { name: 'Estadísticas',   href: '/admin/estadisticas',    icon: ChartBarIcon       },
+  { name: 'Promociones',    href: '/admin/promociones',     icon: SparklesIcon       }, // <- Cambiado TagIcon por SparklesIcon
+  { name: 'Pagos',          href: '/admin/pagos',           icon: CreditCardIcon     },
+  { name: 'Reportes',       href: '/admin/reportes',        icon: DocumentTextIcon   },
+  { name: 'Roles',          href: '/admin/roles',           icon: ShieldCheckIcon    },
+  { name: 'Configuración',  href: '/admin/configuracion',   icon: CogIcon            },
+  { name: 'FAQ y Políticas', href: '/admin/politicas',       icon: QuestionMarkCircleIcon },
 ];
 
-export default function NavLinks({ mobile = false, onLinkClick }: { mobile?: boolean, onLinkClick?: () => void }) {
+export default function NavLinks({
+  mobile = false,
+  onLinkClick,
+}: {
+  mobile?: boolean
+  onLinkClick?: () => void
+}) {
   const pathname = usePathname();
 
   return (

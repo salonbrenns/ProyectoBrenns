@@ -1,185 +1,179 @@
-// src/app/servicios/page.tsx
+// src/app/(frontend)/servicios/page.tsx
 "use client"
 
 import Image from "next/image"
 import Link from "next/link"
-import { Search, Heart } from "lucide-react"
-import { useState } from "react"
-// 1. Importar el componente modular FilterSidebar
-import FilterSidebar from '@/components/ui/filter-sidebar'; 
+import { Heart, Loader2, Sparkles } from "lucide-react"
+import { useState, useEffect } from "react"
+import FilterSidebar from '@/components/ui/filter-sidebar'
 
-const serviciosData = [
-  {
-    id: 1,
-    nombre: "Manicure Clásica Semipermanente",
-    precio: 380,
-    categoria: "Manicura",
-    img: "/servicios/manicure.jpg",
-    duracion: "60 min"
-  },
-  {
-    id: 2,
-    nombre: "Pedicure Spa + Gelish",
-    precio: 480,
-    categoria: "Pedicura",
-    img: "/servicios/pedicure.jpg",
-    duracion: "90 min"
-  },
-  {
-    id: 3,
-    nombre: "Uñas AcryliGel + Diseño",
-    precio: 850,
-    categoria: "Uñas",
-    img: "/servicios/unas.jpg",
-    duracion: "120 min"
-  }
-]
-
-
-
+type Servicio = {
+  id: number
+  nombre: string
+  precio: number
+  categoria: string
+  imagen: string | null
+  duracion: string
+}
 
 export default function ServiciosPage() {
-    const [busqueda, setBusqueda] = useState("")
-    const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([])
-    
-    // Obtener todas las categorías únicas disponibles en los datos
-    const categoriasDisponibles = Array.from(new Set(serviciosData.map(s => s.categoria)));
+  const [serviciosData, setServiciosData] = useState<Servicio[]>([])
+  const [cargando, setCargando] = useState(true)
+  const [busqueda, setBusqueda] = useState("")
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([])
 
-    // Función para manejar el estado de las categorías (seleccionar/deseleccionar)
-    const toggleCategoria = (categoria: string) => {
-        setCategoriasSeleccionadas(prev => 
-            prev.includes(categoria) 
-                ? prev.filter(c => c !== categoria) // Deseleccionar
-                : [...prev, categoria]               // Seleccionar
-        );
-    };
+  // Cargar servicios desde la BD
+  useEffect(() => {
+    fetch("/api/servicios")
+      .then(r => r.json())
+      .then(data => {
+        setServiciosData(data.servicios || [])
+        setCargando(false)
+      })
+      .catch(() => setCargando(false))
+  }, [])
 
-    // Nueva función simple para pasar la lógica de limpieza al Sidebar
-    const limpiarFiltros = () => {
-        setBusqueda("");
-        setCategoriasSeleccionadas([]);
-    };
+  const categoriasDisponibles = Array.from(new Set(serviciosData.map(s => s.categoria)))
 
-
-    // LÓGICA DE FILTRADO
-    const serviciosFiltrados = serviciosData
-        .filter(s => s.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-        .filter(s => {
-            // Si no hay categorías seleccionadas, muestra todos.
-            if (categoriasSeleccionadas.length === 0) return true;
-            // Si hay categorías, muestra solo los que coincidan.
-            return categoriasSeleccionadas.includes(s.categoria);
-        });
-    
-
-    return (
-        <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-16">
-            <div className="max-w-7xl mx-auto px-6">
-
-                <header className="text-center mb-12">
-                    <h1 className="text-5xl md:text-6xl font-bold text-pink-600 mb-6">
-                        Conoce de nuestros Servicios
-                    </h1>
-                </header>
-
-                <div className="grid lg:grid-cols-4 gap-10">
-
-                    {/* COLUMNA 1: FILTROS (Usando el componente FilterSidebar) */}
-                    <aside aria-label="Filtros de servicios" className="lg:col-span-1">
-                        <FilterSidebar
-                            title="Filtrar por:" // Título del Sidebar
-                            busqueda={busqueda}
-                            setBusqueda={setBusqueda}
-                            categoriasSeleccionadas={categoriasSeleccionadas}
-                            categoriasDisponibles={categoriasDisponibles}
-                            toggleCategoria={toggleCategoria}
-                            limpiarFiltros={limpiarFiltros} // Pasa la función de limpieza
-                        />
-                    </aside>
-
-                    {/* COLUMNAS 2, 3, 4: LISTA DE SERVICIOS */}
-                    <section aria-label="Lista de servicios disponibles" className="lg:col-span-3">
-                        
-                        
-                       
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {serviciosFiltrados.map((servicio) => (
-                                <article key={servicio.id} className="group bg-white rounded-3xl shadow-xl overflow-hidden border border-pink-100 transition-all hover:shadow-2xl">
-                                    <Link href={`/servicio/${servicio.id}`} aria-label={`Ver detalle de ${servicio.nombre}`}>
-                                        <div className="cursor-pointer">
-                                            <div className="relative h-72 overflow-hidden bg-gray-100">
-                                                <Image
-                                                    src={servicio.img}
-                                                    alt={`Fotografía profesional de ${servicio.nombre}`}
-                                                    fill
-                                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                                    className="object-cover group-hover:scale-110 transition-transform duration-700"
-                                                    loading="lazy"
-                                                    quality={80}
-                                                />
-                                                <button
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    aria-label={`Agregar ${servicio.nombre} a favoritos`}
-                                                    className="absolute top-4 right-4 bg-white/90 p-3 rounded-full shadow-lg hover:bg-white transition z-10"
-                                                >
-                                                    <Heart className="w-6 h-6 text-pink-600" aria-hidden="true" />
-                                                </button>
-                                                <div className="absolute bottom-4 left-4 bg-pink-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm" aria-label={`Duración: ${servicio.duracion}`}>
-                                                    {servicio.duracion}
-                                                </div>
-                                            </div>
-
-                                            {/* NOMBRE Y PRECIO */}
-                                            <div className="p-6 bg-gradient-to-b from-pink-50 to-white">
-                                                <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
-                                                    {servicio.nombre}
-                                                </h3>
-                                                <p className="text-3xl font-bold text-pink-600">
-                                                    ${servicio.precio.toLocaleString()}
-                                                    <span className="text-lg font-normal text-gray-700"> MXN</span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Link>
-
-                                    <div className="px-6 pb-6">
-                                        <Link href={`/servicio/${servicio.id}`}>
-                                            <button
-                                                aria-label={`Ver detalle completo del servicio ${servicio.nombre}`}
-                                                className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-4 rounded-full transition shadow-lg focus:outline-none focus:ring-4 focus:ring-pink-300 active:scale-95"
-                                            >
-                                                Ver Detalle
-                                            </button>
-                                        </Link>
-                                    </div>
-                                </article>
-                            ))}
-                            
-                            {/* Mensaje de no resultados */}
-                            {serviciosFiltrados.length === 0 && (
-                                <div className="lg:col-span-3 text-center py-20 bg-white/50 rounded-xl mt-10 shadow-lg border border-pink-100">
-                                    <p className="text-2xl font-semibold text-gray-600">
-                                        🙁 No se encontraron servicios con los filtros aplicados.
-                                    </p>
-                                    <button 
-                                        onClick={limpiarFiltros}
-                                        className="mt-4 text-pink-600 font-bold hover:underline transition-colors"
-                                    >
-                                        Mostrar todos los servicios
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                </div>
-
-                <footer className="text-center mt-16">
-                    <p className="text-gray-700 text-lg">
-                        ¿Quieres ver más servicios? Pronto agregaremos más opciones
-                    </p>
-                </footer>
-            </div>
-        </main>
+  const toggleCategoria = (categoria: string) => {
+    setCategoriasSeleccionadas(prev =>
+      prev.includes(categoria) ? prev.filter(c => c !== categoria) : [...prev, categoria]
     )
+  }
+
+  const limpiarFiltros = () => {
+    setBusqueda("")
+    setCategoriasSeleccionadas([])
+  }
+
+  const serviciosFiltrados = serviciosData
+    .filter(s => s.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+    .filter(s => categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(s.categoria))
+
+  return (
+    <main className="min-h-screen bg-[#fffafa] py-12">
+      <div className="max-w-[1400px] mx-auto px-6">
+
+      
+
+        {/* BARRA DE FILTROS HORIZONTAL */}
+        <div className="mb-10">
+          <FilterSidebar
+            title="Filtrar por:"
+            busqueda={busqueda}
+            setBusqueda={setBusqueda}
+            categoriasSeleccionadas={categoriasSeleccionadas}
+            categoriasDisponibles={categoriasDisponibles}
+            toggleCategoria={toggleCategoria}
+            limpiarFiltros={limpiarFiltros}
+          />
+        </div>
+
+        {/* CONTENIDO PRINCIPAL - Ahora ocupa todo el ancho */}
+        <section aria-label="Lista de servicios disponibles">
+          
+         {/* Estado: Cargando */}
+         {cargando && (
+           <div className="flex flex-col justify-center items-center py-40">
+             <div className="relative">
+              <Loader2 className="w-16 h-16 text-pink-400 animate-spin mb-4" />
+              <Sparkles className="w-6 h-6 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
+            </div>
+            <p className="text-pink-600 font-medium animate-pulse">Preparando algo especial para ti...</p>
+            </div>
+)}
+
+          {/* Grid de servicios: 4 columnas en pantallas grandes */}
+          {!cargando && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {serviciosFiltrados.map((servicio) => (
+                <article 
+                  key={servicio.id} 
+                  className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl border border-pink-50 overflow-hidden transition-all duration-500 hover:-translate-y-2"
+                >
+                  <Link href={`/servicio/${servicio.id}`} className="block">
+                    <div className="relative h-64 overflow-hidden bg-pink-50">
+                      {servicio.imagen ? (
+                        <Image
+                          src={servicio.imagen}
+                          alt={servicio.nombre}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-6xl">
+                          ✨
+                        </div>
+                      )}
+                      
+                      {/* Badge de Duración */}
+                      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-1.5 rounded-full font-bold shadow-sm text-xs border border-pink-100">
+                        {servicio.duracion}
+                      </div>
+
+                      {/* Botón Favorito */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        className="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2.5 rounded-full shadow-md hover:bg-pink-600 hover:text-white transition-all z-10 text-pink-600"
+                      >
+                        <Heart className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="p-6">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-pink-400 mb-2 block">
+                        {servicio.categoria}
+                      </span>
+                      <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-pink-600 transition-colors line-clamp-1">
+                        {servicio.nombre}
+                      </h3>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-gray-900">${Number(servicio.precio).toLocaleString()}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">MXN</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  <div className="px-6 pb-6">
+                    <Link href={`/servicio/${servicio.id}`}>
+                      <button className="w-full bg-gray-900 hover:bg-pink-600 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg active:scale-95 text-sm">
+                        Reservar Ahora
+                      </button>
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {/* Sin resultados */}
+          {!cargando && serviciosFiltrados.length === 0 && (
+            <div className="text-center py-32 bg-white rounded-[3rem] shadow-inner border-2 border-dashed border-pink-100">
+              <div className="text-6xl mb-6">🔍</div>
+              <p className="text-2xl font-bold text-gray-800 mb-2">
+                No encontramos lo que buscas
+              </p>
+              <p className="text-gray-500 mb-8">Intenta ajustando los filtros o la búsqueda.</p>
+              <button
+                onClick={limpiarFiltros}
+                className="px-8 py-3 bg-pink-600 text-white font-bold rounded-full hover:bg-pink-700 transition shadow-xl"
+              >
+                Ver todos los servicios
+              </button>
+            </div>
+          )}
+        </section>
+
+        <footer className="text-center mt-20 pt-10 border-t border-pink-100">
+          <p className="text-gray-400 font-medium italic">
+            Estamos actualizando nuestro catálogo semanalmente.
+          </p>
+        </footer>
+      </div>
+    </main>
+  )
 }

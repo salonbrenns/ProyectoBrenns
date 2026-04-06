@@ -1,7 +1,7 @@
 // src/app/curso/[id]/page.tsx
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar, Clock, MapPin, User, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react"
+import { Calendar, Clock, User, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react"
 
 const cursosData = {
   "1": {
@@ -191,7 +191,7 @@ export default async function CursoDetallePage({
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100 text-center">
               <div className="bg-gray-200 border-2 border-dashed rounded-full w-32 h-32 mx-auto mb-6" />
               <h3 className="text-2xl font-bold text-gray-900">{curso.instructora}</h3>
-              <p className="text-pink-600 font-semibold">Instructora certificada Brenn's</p>
+              <p className="text-pink-600 font-semibold">Instructora certificada Brenn&apos;s</p>
             </div>
           </div>
 
