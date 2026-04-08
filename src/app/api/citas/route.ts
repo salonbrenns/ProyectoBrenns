@@ -61,8 +61,8 @@ export async function POST(req: Request) {
       cita 
     }, { status: 201 });
 
-  } catch (e: any) {
-    console.error("❌ Error al crear cita:", e);
+  } catch (error: unknown) {
+    console.error("❌ Error al crear cita:", error);
     return NextResponse.json({ 
       error: "Error al crear la cita. Inténtalo de nuevo." 
     }, { status: 500 });

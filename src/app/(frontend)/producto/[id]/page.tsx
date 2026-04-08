@@ -11,7 +11,6 @@ export default async function DetalleProducto({
 }) {
   const { id } = await params
 
-<<<<<<< Updated upstream
   const producto = await prisma.producto.findUnique({
     where: { id: Number(id), activo: true },
     include: {
@@ -19,21 +18,6 @@ export default async function DetalleProducto({
       categoria: true,
     },
   })
-=======
-const productos = {
-  "1": { id: 1, nombre: "Esmalte Rojo", precio: 15000, categoria: "Nail Art", marca: "Renova Matte", img: "/catalogo/Rojo.jpg", rating: 4.5, reviews: 128, descripcion: "Un hermoso esmalte de color rojo que aporta un toque de elegancia a tus uñas." },
-  "2": { id: 2, nombre: "Removedor Sin Acetona", precio: 16000, categoria: "Foot Care", marca: "Brenn&apos;s Care", img: "/catalogo/renovador.jpg", rating: 4.8, reviews: 89, descripcion: "Removedor suave sin acetona, ideal para uñas sensibles." },
-  "3": { id: 3, nombre: "Kit Manicura Profesional", precio: 45000, categoria: "Salon Pro", marca: "Brenn&apos;s", img: "/catalogo/kit.jpg", rating: 5.0, reviews: 203, descripcion: "Kit completo con todo lo necesario para manicura profesional." }
-}
-
-export default function ProductoDetalle({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
-  const producto = productos[id as keyof typeof productos]
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [quantity, setQuantity] = useState(1)
-  const [agregado, setAgregado] = useState(false)
->>>>>>> Stashed changes
 
   if (!producto) return notFound()
 

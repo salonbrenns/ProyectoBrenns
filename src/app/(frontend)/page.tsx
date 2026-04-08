@@ -66,9 +66,10 @@ export default async function Home() {
       <CarruselServicios servicios={servicios} />
 
       {/* ── 2. PRODUCTOS con carrusel ── */}
-      <CarruselProductos productos={productos} />
-
-    
+    <CarruselProductos productos={productos.map(p => ({
+  ...p,
+  imagen: typeof p.imagen === 'string' ? p.imagen : null
+}))} />
 
       {/* ── 4. ACADEMIA ── */}
       <section className="bg-pink-50/30 py-20">
