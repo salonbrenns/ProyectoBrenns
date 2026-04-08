@@ -44,7 +44,7 @@ async function createPedidoHandler(req: NextRequest) {
       },
     })
     return NextResponse.json({ ok: true, pedido_id: pedido.id })
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }

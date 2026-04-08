@@ -158,8 +158,7 @@ export const validarLogin = (data: {
 export const validarInscripcion = (data: {
   nombre: string
   apellido: string
-  correo: string
-  telefono: string
+
   nombreTarjeta: string
   numeroTarjeta: string
   expiracion: string
@@ -175,17 +174,9 @@ export const validarInscripcion = (data: {
     errores.apellido = "El apellido es requerido"
   }
 
-  if (!validarCampoVacio(data.correo)) {
-    errores.correo = "El correo es requerido"
-  } else if (!validarEmail(data.correo)) {
-    errores.correo = "El correo no es válido"
-  }
+ 
 
-  if (!validarCampoVacio(data.telefono)) {
-    errores.telefono = "El teléfono es requerido"
-  } else if (!validarTelefono(data.telefono)) {
-    errores.telefono = "El teléfono debe tener 10 dígitos"
-  }
+  
 
   if (!validarCampoVacio(data.nombreTarjeta)) {
     errores.nombreTarjeta = "El nombre en la tarjeta es requerido"

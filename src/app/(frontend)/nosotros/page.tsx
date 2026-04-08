@@ -1,8 +1,8 @@
 import { MapPin, Clock, Mail, Users, Award, Heart } from "lucide-react";
 
 export const metadata = {
-  title: "Nosotros — Brenn's",
-  description: "Conoce a Brenn's: academia, distribuidora y salón de belleza en Huejutla de Reyes, Hidalgo.",
+  title: "Nosotros — Brenn&apos;s",
+  description: "Conoce a Brenn&apos;s: academia, distribuidora y salón de belleza en Huejutla de Reyes, Hidalgo.",
 };
 
 export default function NosotrosPage() {

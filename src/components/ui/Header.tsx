@@ -77,7 +77,7 @@ export default function Header() {
             <div className="relative w-16 h-16 md:w-20 md:h-20">
               <Image
                 src="/logo/logo.png"
-                alt="Brenn's - Academia • Distribuidora • Salón"
+                alt="Brenn&apos;s- Academia • Distribuidora • Salón"
                 fill
                 className="object-contain"
                 priority

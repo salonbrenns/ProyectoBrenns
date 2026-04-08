@@ -8,20 +8,16 @@ import clsx from 'clsx';
 import {
   HomeIcon,
   TagIcon,
-  Squares2X2Icon,
-  ShoppingBagIcon,
-  ScissorsIcon,
+  
   CalendarDaysIcon,
-  ClockIcon,
+  
   AcademicCapIcon,
   BellIcon,
-  ChartBarIcon,
+ 
   SparklesIcon,
-  CreditCardIcon,
-  DocumentTextIcon,
-  ShieldCheckIcon,
+  
   CogIcon,
-  QuestionMarkCircleIcon,
+ 
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 

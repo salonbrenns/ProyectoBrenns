@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRasp } from '@/lib/withRasp'
 
-async function getProductosHandler(req: NextRequest) {
+async function getProductosHandler(_req: NextRequest) {
   try {
     const productos = await prisma.producto.findMany({
       select: {

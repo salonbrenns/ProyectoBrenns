@@ -21,7 +21,7 @@ export default function SideNav({
     <div className={mobile ? 'p-3 space-y-4' : 'flex h-full flex-col border-r border-pink-200 bg-pink-900 text-white'}>
       {!mobile && (
         <Link href="/admin/dashboard" className="flex h-24 items-center justify-center p-4">
-          <div className="text-2xl font-bold tracking-wide">Brenn's Beauty</div>
+          <div className="text-2xl font-bold tracking-wide">Brenn&apos;s Beauty</div>
         </Link>
       )}
 

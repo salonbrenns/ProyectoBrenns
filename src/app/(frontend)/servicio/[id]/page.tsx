@@ -30,7 +30,7 @@ export default async function DetalleServicio({
 
   const servicio = await prisma.servicio.findUnique({
     where: { id: Number(id), activo: true },
-  })
+  })as Servicio | null;
 
   if (!servicio) return notFound()
 

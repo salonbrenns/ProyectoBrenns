@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Upload, MapPin, Share2, Palette, Users, Save, Plus, Trash2 } from "lucide-react";
+import { Settings, Upload, Save, Plus, Trash2 } from "lucide-react";
 import { CldUploadWidget } from "next-cloudinary";
 import { useSiteConfigStore } from "@/store/siteConfigStore";
 
@@ -44,7 +44,7 @@ export default function ConfiguracionPage() {
           <Settings className="w-9 h-9 text-pink-600" />
           Configuración del Sitio
         </h1>
-        <p className="text-gray-500 mt-1">Personaliza toda la información de Brenn's</p>
+        <p className="text-gray-500 mt-1">Personaliza toda la información de Brenn&apos;s</p>
       </div>
 
       {/* Tabs */}
@@ -116,7 +116,7 @@ export default function ConfiguracionPage() {
               <label className="block font-semibold mb-3">Imágenes del Hero (Carrusel)</label>
               <CldUploadWidget 
                 uploadPreset="brenns_hero"
-                onSuccess={(result: any) => {
+                onSuccess={(result: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => {
                   if (result?.info?.secure_url) {
                     store.addHeroImage(result.info.secure_url);
                   }
@@ -215,7 +215,7 @@ export default function ConfiguracionPage() {
           <div className="space-y-8">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Equipo de Trabajo</h2>
-              <p className="text-sm text-gray-500">Aparecerá en páginas "Nosotros" y "Contacto"</p>
+              <p className="text-sm text-gray-500">Aparecerá en páginas Nosotros&quot;  y Contacto&quot;</p>
             </div>
 
             {/* Formulario para agregar empleado */}
@@ -246,7 +246,7 @@ export default function ConfiguracionPage() {
 
               <CldUploadWidget 
                 uploadPreset="brenns_hero"
-                onSuccess={(result: any) => {
+                onSuccess={(result: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => {
                   if (result?.info?.secure_url) {
                     setNuevoEmpleado({ ...nuevoEmpleado, imagen: result.info.secure_url });
                   }
