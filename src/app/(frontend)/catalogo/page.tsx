@@ -6,48 +6,7 @@ import ProductoCard, { type ProductoCardType } from '@/components/ui/ProductoCar
 import ProductosFiltros from '@/components/ui/ProductosFiltros'
 import Paginacion from '@/components/ui/paginacion'
 
-<<<<<<< Updated upstream
 const POR_PAGINA = 12
-=======
-const productos = [
-  { 
-    id: 1, 
-    nombre: "Esmalte Rosa Pastel", 
-    precio: 15000, 
-    categoria: "Nail Art", 
-    marca: "Renova Matte", 
-    oferta: true, 
-    img: "/catalogo/Rojo.jpg",
-    descripcion: "Un hermoso esmalte de color rojo que aporta un toque de elegancia a tus uñas. Su fórmula de larga duración asegura un acabado brillante y duradero.",
-    rating: 4.5,
-    reviews: 128
-  },
-  { 
-    id: 2, 
-    nombre: "Removedor Sin Acetona", 
-    precio: 16000, 
-    categoria: "Foot Care", 
-    marca: "Brenn&apos;s Care", 
-    oferta: false, 
-    img: "/catalogo/renovador.jpg",
-    descripcion: "Removedor suave sin acetona, ideal para uñas sensibles. No reseca ni debilita la uña natural.",
-    rating: 4.8,
-    reviews: 89
-  },
-  { 
-    id: 3, 
-    nombre: "Kit Manicura Profesional", 
-    precio: 45000, 
-    categoria: "Salon Pro", 
-    marca: "Brenn&apos;s", 
-    oferta: true, 
-    img: "/catalogo/KIT.jpg",
-    descripcion: "Kit completo con todo lo necesario para manicura profesional en casa o salón.",
-    rating: 5.0,
-    reviews: 203
-  },
-]
->>>>>>> Stashed changes
 
 export default function ProductosPage() {
   const [productos, setProductos] = useState<ProductoCardType[]>([])

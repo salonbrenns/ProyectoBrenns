@@ -24,6 +24,7 @@ export default function CarruselProductos({ productos = [] }: { productos: Produ
   const esLocal = (img: string | null | undefined): img is string =>
   !!img && 
   img.length > 0 && 
+  typeof img === 'string' &&
   !img.startsWith("http") && 
   img.startsWith("/") // ← solo rutas que empiecen con /
   // Evitamos división por cero si productos está vacío
