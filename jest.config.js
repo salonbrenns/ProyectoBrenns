@@ -10,9 +10,10 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
-     'src/lib/validation.ts',
-  'src/lib/utils.ts',
-  'src/lib/permisos.ts',
+  'src/lib/**/*.ts',
+  'src/components/**/*.tsx',
+  '!src/**/*.d.ts',
+  '!src/**/index.ts',
   ],
 }
 
