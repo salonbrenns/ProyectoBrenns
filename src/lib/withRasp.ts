@@ -4,12 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 const SQL_INJECTION_PATTERNS = [
   /(\%27)|(\')|(\-\-)|(\%23)|(#)/i,
-  /(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\s+/i,
+  /\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\s/i,
   /(EXEC|EXECUTE|CAST|CONVERT|CHAR|NCHAR)\s*\(/i,
 ];
 
 const XSS_PATTERNS = [
-  /<script[\s\S]*?>[\s\S]*?<\/script>/i,
+   /<script[^>]*>[^<]*<\/script>/i,
   /javascript\s*:/i,
   /on\w+\s*=\s*["'][^"']*["']/i,
   /<[^>]+\s+on\w+\s*=/i,
