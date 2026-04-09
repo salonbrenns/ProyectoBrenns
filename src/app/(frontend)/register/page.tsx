@@ -3,7 +3,7 @@ import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { validarRegistro } from "@/lib/validation"
-import { Eye, EyeOff, ChevronDown, Loader2, Sparkles } from "lucide-react"
+import { Eye, EyeOff,Loader2, Sparkles } from "lucide-react"
 
 function RegisterContenido() {
   const router = useRouter()

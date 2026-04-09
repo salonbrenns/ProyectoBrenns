@@ -24,6 +24,7 @@ export default function CarruselProductos({ productos = [] }: { productos: Produ
   const esLocal = (img: string | null | undefined): img is string =>
   !!img && 
   img.length > 0 && 
+  typeof img === 'string' &&
   !img.startsWith("http") && 
   img.startsWith("/") // ← solo rutas que empiecen con /
   // Evitamos división por cero si productos está vacío
@@ -84,7 +85,7 @@ export default function CarruselProductos({ productos = [] }: { productos: Produ
               </div>
               <div className="p-5">
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  {p.marca?.nombre || "Brenn's"}
+                  {p.marca?.nombre || "Brenn&apos;s"}
                 </span>
                 <h3 className="font-bold text-gray-900 mt-1 mb-3 line-clamp-1">{p.nombre}</h3>
                 <div className="flex items-center justify-between">

@@ -198,8 +198,6 @@ describe('validarInscripcion', () => {
   const base = {
     nombre: 'Ana',
     apellido: 'García',
-    correo: 'ana@test.com',
-    telefono: '7712345678',
     nombreTarjeta: 'Ana García',
     numeroTarjeta: '1234567812345678',
     expiracion: '12/99',
@@ -208,12 +206,24 @@ describe('validarInscripcion', () => {
   it('retorna válido con datos completos', () => {
     expect(validarInscripcion(base).valido).toBe(true)
   })
-  it('retorna error si falta correo', () => {
-    const r = validarInscripcion({ ...base, correo: '' })
-    expect(r.errores.correo).toBeDefined()
+  it('retorna error si falta nombre', () => {
+    const r = validarInscripcion({ ...base, nombre: '' })
+    expect(r.errores.nombre).toBe('El nombre es requerido')
+  })
+  it('retorna error si falta apellido', () => {
+    const r = validarInscripcion({ ...base, apellido: '' })
+    expect(r.errores.apellido).toBe('El apellido es requerido')
+  })
+  it('retorna error si falta nombre en tarjeta', () => {
+    const r = validarInscripcion({ ...base, nombreTarjeta: '' })
+    expect(r.errores.nombreTarjeta).toBe('El nombre en la tarjeta es requerido')
   })
   it('retorna error si el CVV es inválido', () => {
     const r = validarInscripcion({ ...base, cvv: '1' })
-    expect(r.errores.cvv).toBeDefined()
+    expect(r.errores.cvv).toBe('El CVV debe tener 3 o 4 dígitos')
+  })
+  it('retorna error si la tarjeta tiene menos de 16 dígitos', () => {
+    const r = validarInscripcion({ ...base, numeroTarjeta: '1234' })
+    expect(r.errores.numeroTarjeta).toBe('El número de tarjeta debe tener 16 dígitos')
   })
 })

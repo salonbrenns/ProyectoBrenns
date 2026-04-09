@@ -6,7 +6,7 @@ import Image from "next/image"
 import { useSession } from "next-auth/react"
 import AuthGuard from "@/components/ui/AuthGuard"
 import Breadcrumb from "@/components/Breadcrumb"
-import { CreditCard, Lock, CheckCircle, Package } from "lucide-react"
+import { CreditCard, Lock, CheckCircle, Package, ShieldAlert } from "lucide-react"
 import { validarInscripcion } from "@/lib/validation"
 
 type CartItem = {
@@ -26,18 +26,25 @@ export default function CheckoutPage() {
   const [items, setItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(false)
   const [exito, setExito] = useState(false)
+  
+  // Se eliminaron correo y telefono de aquí
   const [formData, setFormData] = useState({
-    nombre: "", apellido: "", correo: "", telefono: "",
-    nombreTarjeta: "", numeroTarjeta: "", expiracion: "", cvv: ""
+    nombre: "", 
+    apellido: "",
+    nombreTarjeta: "", 
+    numeroTarjeta: "", 
+    expiracion: "", 
+    cvv: ""
   })
+  
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [generalError, setGeneralError] = useState<string | null>(null)
+  const [errorRasp, setErrorRasp] = useState<string | null>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem("nail_store_cart")
     if (stored) setItems(JSON.parse(stored))
 
-    // Pre-llenar con datos de la sesión de NextAuth
     if (session?.user) {
       const nombreCompleto = session.user.name || ""
       const partes = nombreCompleto.split(" ")
@@ -45,8 +52,7 @@ export default function CheckoutPage() {
         ...prev,
         nombre: partes[0] || "",
         apellido: partes.slice(1).join(" ") || "",
-        correo: session.user.email || "",
-       telefono: (session.user as { telefono?: string }).telefono || "",
+        // Se eliminó la carga de correo y telefono
       }))
     }
   }, [session])
@@ -58,12 +64,14 @@ export default function CheckoutPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+    setErrorRasp(null)
   }
 
   const handlePago = async (e: React.FormEvent) => {
     e.preventDefault()
     setFieldErrors({})
     setGeneralError(null)
+    setErrorRasp(null)
 
     const validacion = validarInscripcion(formData)
     if (!validacion.valido) {
@@ -83,27 +91,30 @@ export default function CheckoutPage() {
           costo_envio: envio / 100,
           total: total / 100,
           nombre_cliente: `${formData.nombre} ${formData.apellido}`.trim(),
-          correo_cliente: formData.correo,
-          telefono_cliente: formData.telefono,
         }),
       })
 
       const data = await res.json()
+
+      if (res.status === 403) {
+        setErrorRasp(data.error ?? "Tu solicitud fue bloqueada por seguridad.")
+        return
+      }
+
       if (!res.ok) throw new Error(data.error || "Error al procesar el pedido")
 
-      // Éxito: limpiar carrito y mostrar confirmación
       localStorage.removeItem("nail_store_cart")
       window.dispatchEvent(new Event("carrito-actualizado"))
       setExito(true)
 
     } catch (err: unknown) {
-  setGeneralError(err instanceof Error ? err.message : "Error al procesar el pedido")
+      setGeneralError(err instanceof Error ? err.message : "Error al procesar el pedido")
     } finally {
       setLoading(false)
     }
   }
 
-  // Pantalla de éxito
+  // --- RENDERIZADO (Se mantiene igual, ya no contiene inputs de correo/tel) ---
   if (exito) {
     return (
       <AuthGuard>
@@ -149,7 +160,6 @@ export default function CheckoutPage() {
     <AuthGuard>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-white py-12">
         <div className="max-w-7xl mx-auto px-6">
-
           <Breadcrumb items={[
             { label: "Carrito", href: "/carrito" },
             { label: "Checkout", href: "#", active: true }
@@ -158,8 +168,6 @@ export default function CheckoutPage() {
           <h1 className="text-5xl font-bold text-center text-pink-600 mb-12">Finalizar Compra</h1>
 
           <div className="grid lg:grid-cols-3 gap-10">
-
-            {/* Formulario */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-3xl shadow-2xl p-10">
                 <h2 className="text-3xl font-bold text-gray-800 mb-8 flex items-center gap-3">
@@ -183,25 +191,6 @@ export default function CheckoutPage() {
                         placeholder="Gómez López" />
                       {fieldErrors.apellido && <p className="text-red-600 text-xs mt-1">{fieldErrors.apellido}</p>}
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-lg font-bold mb-2">Correo electrónico</label>
-                    <input type="email" name="correo" value={formData.correo} onChange={handleChange}
-                      className={`w-full px-6 py-4 rounded-full border-2 outline-none transition-all ${fieldErrors.correo ? "border-red-500" : "border-pink-200 focus:border-pink-500"}`}
-                      placeholder="ana@ejemplo.com" />
-                    {fieldErrors.correo && <p className="text-red-600 text-xs mt-1">{fieldErrors.correo}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-lg font-bold mb-2">Teléfono</label>
-                    <div className="flex">
-                      <span className="inline-flex items-center px-5 rounded-l-full bg-gray-100 border-2 border-r-0 border-pink-200 text-gray-600">MX +52</span>
-                      <input name="telefono" value={formData.telefono} onChange={handleChange}
-                        className={`w-full px-6 py-4 rounded-r-full border-2 outline-none transition-all ${fieldErrors.telefono ? "border-red-500" : "border-pink-200 focus:border-pink-500"}`}
-                        placeholder="961 123 4567" />
-                    </div>
-                    {fieldErrors.telefono && <p className="text-red-600 text-xs mt-1">{fieldErrors.telefono}</p>}
                   </div>
 
                   <div>
@@ -242,6 +231,16 @@ export default function CheckoutPage() {
                     <Lock className="w-4 h-4" />
                     <span>Tus datos están protegidos con encriptación SSL</span>
                   </div>
+
+                  {errorRasp && (
+                    <div className="flex items-start gap-3 bg-red-50 border border-red-300 text-red-700 rounded-2xl px-4 py-3 text-sm">
+                      <ShieldAlert className="w-5 h-5 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-semibold">Solicitud bloqueada por seguridad</p>
+                        <p className="text-red-600 mt-0.5">{errorRasp}</p>
+                      </div>
+                    </div>
+                  )}
 
                   {generalError && (
                     <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm text-center border border-red-100">

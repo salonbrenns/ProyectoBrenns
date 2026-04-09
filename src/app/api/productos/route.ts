@@ -1,8 +1,8 @@
-import { NextResponse, NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withRasp } from '@/lib/withRasp'
 
-async function getProductosHandler(req: NextRequest) {
+// GET - Obtener todos los productos
+export async function GET() {
   try {
     const productos = await prisma.producto.findMany({
       select: {
@@ -20,18 +20,23 @@ async function getProductosHandler(req: NextRequest) {
           }
         },
         marca: {
-          select: { nombre: true }
+          select: {
+            nombre: true
+          }
         }
       },
-      orderBy: { id: 'desc' }
+      orderBy: {
+        id: 'desc'
+      }
     })
+
     return NextResponse.json(productos)
+
   } catch {
+    // CORRECCIÓN: Se eliminó (_error) para limpiar la advertencia del linter
     return NextResponse.json(
       { error: 'Error al obtener productos' },
       { status: 500 }
     )
   }
 }
-
-export const GET = withRasp(getProductosHandler)

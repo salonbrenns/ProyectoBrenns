@@ -31,7 +31,7 @@ export default function DetalleTabs({ descripcion, beneficios, incluye }: Detall
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as "descripcion" | "beneficios" | "incluye")}
             className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
               activeTab === tab.id 
                 ? "border-pink-600 text-pink-600" 

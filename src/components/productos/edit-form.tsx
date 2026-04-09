@@ -18,7 +18,7 @@ interface Categoria {
 
 interface Producto {
   id: number
-  codigo: string
+  codigo: string | null
   nombre: string
   descripcion: string | null
   precio_costo: number
@@ -80,7 +80,7 @@ export default function EditProductoForm({
                 <input
                   name="codigo"
                   required
-                  defaultValue={producto.codigo}
+                  defaultValue={producto.codigo ?? ''}
                   className={inputClass}
                 />
               </div>

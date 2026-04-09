@@ -14,7 +14,7 @@ interface Producto {
   precio_costo: number
   stock: number
   // Definimos como any porque Prisma lo trae como JsonValue
-  imagen: any 
+  imagen: unknown
   activo: boolean | null  
   marca: { nombre: string } | null
   categoria: { nombre: string } | null

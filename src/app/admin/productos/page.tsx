@@ -90,7 +90,7 @@ export default async function ProductosPage({
       <ProductoFilter categorias={categorias} marcas={marcas} />
 
       <ProductoTable
-        productos={productos}
+        productos={productos.map(p => ({ ...p, codigo: p.codigo ?? '' }))}
         currentPage={page}
         totalPages={totalPages}
       />

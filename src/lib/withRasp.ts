@@ -53,8 +53,9 @@ function raspLog(level: "INFO" | "WARNING" | "CRITICAL", message: string, detail
 
 // ─── WRAPPER PRINCIPAL ───────────────────────────────────────────────────────
 
-export function withRasp(handler: Function) {
-  return async (req: NextRequest, ...args: any[]) => {
+// Después
+export function withRasp(handler: (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>) {
+  return async (req: NextRequest, ...args: unknown[]) => {
     const ip = req.headers.get("x-forwarded-for") ?? "unknown";
     const path = req.nextUrl.pathname;
     const method = req.method;
