@@ -43,11 +43,13 @@ function CarritoContenido() {
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-10">
-          <ShoppingCart className="w-8 h-8 text-rose-600" />
-          <h1 className="text-3xl font-black text-gray-900">
-            Tu Carrito
-            <span className="ml-2 text-lg font-semibold text-gray-400">({totalItems} artículo{totalItems !== 1 ? 's' : ''})</span>
-          </h1>
+        <ShoppingCart className="w-8 h-8 text-rose-600" />
+        <h1 className="text-3xl font-black text-gray-900">
+          Tu Carrito{' '}
+        <span className="ml-2 text-lg font-semibold text-gray-400">
+        ({totalItems} artículo{totalItems !== 1 ? 's' : ''})
+        </span>
+        </h1>
         </div>
 
         {/* Vacío */}
