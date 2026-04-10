@@ -15,7 +15,7 @@ export default function Header() {
   const router = useRouter()
   const autenticado = status === 'authenticated'
 
-  //Carrito desde BD + sincronización
+  
   const cargarCarrito = () => {
     if (status !== 'authenticated') {
       setCantidadCarrito(0)
@@ -34,11 +34,7 @@ export default function Header() {
 
   useEffect(() => {
     cargarCarrito()
-
-    //Sync entre componentes
     window.addEventListener('cart-updated', cargarCarrito)
-
-    //Sync entre pestañas (de main)
     window.addEventListener('storage', cargarCarrito)
 
     return () => {
@@ -47,7 +43,6 @@ export default function Header() {
     }
   }, [status])
 
-  // Mensajes
   useEffect(() => {
     if (!autenticado) return
     fetch('/api/usuario/mensajes')
@@ -73,7 +68,7 @@ export default function Header() {
         <div className="flex items-center justify-between">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition flex-shrink-0">
             <div className="relative w-16 h-16 md:w-20 md:h-20">
               <Image
                 src="/logo/logo.png"
@@ -83,70 +78,97 @@ export default function Header() {
                 priority
               />
             </div>
+            <div className="hidden sm:block">
+              <h1 className="text-lg md:text-2xl font-bold text-gray-900">Brenn&apos;s</h1>
+              <p className="text-xs md:text-sm text-pink-600 font-medium">
+                Academia • Distribuidora • Salón
+              </p>
+            </div>
           </Link>
 
-          {/* Nav */}
-          <nav className="hidden lg:flex gap-6 flex-1 ml-10">
-            <Link href="/">Inicio</Link>
-            <Link href="/servicios">Servicios</Link>
-            <Link href="/cursos">Cursos</Link>
-            <Link href="/catalogo">Tienda</Link>
-            <Link href="/nosotros">Nosotros</Link>
+          {/* Desktop Nav */}
+          <nav className="hidden lg:flex items-center gap-6 flex-1 ml-10">
+            <Link href="/" className="text-gray-700 hover:text-pink-600 font-medium transition text-sm">Inicio</Link>
+            <Link href="/servicios" className="text-gray-700 hover:text-pink-600 font-medium transition text-sm">Servicios</Link>
+            <Link href="/cursos" className="text-gray-700 hover:text-pink-600 font-medium transition text-sm">Cursos</Link>
+            <Link href="/catalogo" className="text-gray-700 hover:text-pink-600 font-medium transition text-sm">Tienda</Link>
+            <Link href="/nosotros" className="text-gray-700 hover:text-pink-600 font-medium transition text-sm">Nosotros</Link>
           </nav>
 
-          {/* Right */}
-          <div className="flex items-center gap-3">
+          {/* Right Icons */}
+          <div className="flex items-center gap-3 md:gap-4">
 
             {autenticado && (
               <>
-                <Link href="/perfil"><User /></Link>
-                <Link href="/favoritos"><Heart /></Link>
-
-                <Link href="/mis-mensajes" className="relative">
-                  <Bell />
-                  {noLeidos > 0 && <span>{noLeidos}</span>}
+                <Link href="/perfil"
+                  className="text-gray-600 hover:text-pink-600 transition p-2 rounded-full hover:bg-pink-50">
+                  <User className="w-5 h-5 md:w-6 md:h-6" />
                 </Link>
 
-                <Link href="/carrito" className="relative">
-                  <ShoppingCart />
-                  {cantidadCarrito > 0 && <span>{cantidadCarrito}</span>}
+                <Link href="/favoritos"
+                  className="text-gray-600 hover:text-pink-600 transition p-2 rounded-full hover:bg-pink-50">
+                  <Heart className="w-5 h-5 md:w-6 md:h-6" />
                 </Link>
 
-                <button onClick={handleLogout}>Cerrar sesión</button>
+                <Link href="/mis-mensajes"
+                  className="relative text-gray-600 hover:text-pink-600 transition p-2 rounded-full hover:bg-pink-50">
+                  <Bell className="w-5 h-5 md:w-6 md:h-6" />
+                  {noLeidos > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                      {noLeidos}
+                    </span>
+                  )}
+                </Link>
+
+                <Link href="/carrito"
+                  className="relative text-gray-600 hover:text-pink-600 transition p-2 rounded-full hover:bg-pink-50">
+                  <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
+                  {cantidadCarrito > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                      {cantidadCarrito > 99 ? '99+' : cantidadCarrito}
+                    </span>
+                  )}
+                </Link>
+
+                <button onClick={handleLogout}
+                  className="hidden md:inline-block text-sm px-4 py-2 rounded-full border border-pink-200 hover:bg-pink-50 text-pink-600 font-semibold transition">
+                  Cerrar sesión
+                </button>
               </>
             )}
 
             {!autenticado && status !== 'loading' && (
               <>
-                <Link href="/login">Login</Link>
-                <Link href="/register">Registro</Link>
+                <Link href="/login"
+                  className="hidden md:block bg-pink-600 hover:bg-pink-700 text-white font-bold px-6 py-2 rounded-full shadow-lg hover:shadow-xl transition transform hover:scale-105 text-sm">
+                  Iniciar Sesión
+                </Link>
+
+                <Link href="/register"
+                  className="hidden md:block bg-pink-600 hover:bg-pink-700 text-white font-bold px-6 py-2 rounded-full shadow-lg hover:shadow-xl transition transform hover:scale-105 text-sm">
+                  Registrarse
+                </Link>
               </>
             )}
 
-            <button onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X /> : <Menu />}
+            <button onClick={() => setMenuOpen(!menuOpen)}
+              className="lg:hidden text-gray-600 hover:text-pink-600 transition p-2 rounded-full hover:bg-pink-50">
+              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile */}
         {menuOpen && (
-          <nav>
-            <Link href="/">Inicio</Link>
-            <Link href="/servicios">Servicios</Link>
-            <Link href="/cursos">Cursos</Link>
-            <Link href="/catalogo">Tienda</Link>
-            <Link href="/nosotros">Nosotros</Link>
-
-            {autenticado && (
-              <>
-                <Link href="/perfil">Perfil</Link>
-                <Link href="/favoritos">Favoritos</Link>
-                <Link href="/carrito">Carrito</Link>
-              </>
-            )}
+          <nav className="lg:hidden mt-4 pb-4 space-y-3 border-t border-gray-200 pt-4">
+            <Link href="/" className="block py-2">Inicio</Link>
+            <Link href="/servicios" className="block py-2">Servicios</Link>
+            <Link href="/cursos" className="block py-2">Cursos</Link>
+            <Link href="/catalogo" className="block py-2">Tienda</Link>
+            <Link href="/nosotros" className="block py-2">Nosotros</Link>
           </nav>
         )}
+
       </div>
     </header>
   )
