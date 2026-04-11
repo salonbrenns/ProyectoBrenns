@@ -37,13 +37,13 @@ const columns = [
   { label: 'Código', key: 'codigo' },
   { label: 'Nombre', key: 'nombre' },
   { label: 'Descripción', key: 'descripcion' },
-  { label: 'Precio V.', key: 'precio_min' }, //ahora usa precio_min
+  { label: 'Precio V.', key: 'precio_min' }, 
   { label: 'Marca', key: 'marca' },
   { label: 'Categoría', key: 'categoria' },
-  { label: 'Stock', key: 'stock_total' }, //ahora total
+  { label: 'Stock', key: 'stock_total' },
 ]
 
-export default function ProductoTable({ productos, currentPage, totalPages }: Props) {
+export default function ProductoTable({ productos, currentPage, totalPages }: Readonly<Props>) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const { replace } = useRouter()
@@ -139,8 +139,6 @@ export default function ProductoTable({ productos, currentPage, totalPages }: Pr
               </tr>
             ) : (
               productos.map((p) => {
-
-                // imagen robusta
                 let foto: string | null = null
                 let totalImagenes = 0
 
@@ -163,7 +161,6 @@ export default function ProductoTable({ productos, currentPage, totalPages }: Pr
                         : 'hover:bg-rose-50'
                     }`}
                   >
-                    {/* FOTO */}
                     <td className="px-6 py-3">
                       {foto ? (
                         <div className="relative h-12 w-12 group">
@@ -187,7 +184,6 @@ export default function ProductoTable({ productos, currentPage, totalPages }: Pr
                       )}
                     </td>
 
-                    {/* CÓDIGO (desde variante) */}
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {p.variantes[0]?.codigo || '—'}
                     </td>
@@ -200,7 +196,6 @@ export default function ProductoTable({ productos, currentPage, totalPages }: Pr
                       {p.descripcion || '—'}
                     </td>
 
-                    {/* PRECIO DESDE */}
                     <td className="px-6 py-4 text-sm text-gray-900 font-semibold">
                       ${p.precio_min.toFixed(2)}
                     </td>
@@ -213,12 +208,10 @@ export default function ProductoTable({ productos, currentPage, totalPages }: Pr
                       {p.categoria?.nombre || 'Sin categoría'}
                     </td>
 
-                    {/* STOCK TOTAL */}
                     <td className="px-6 py-4 text-sm font-medium">
                       {p.stock_total}
                     </td>
 
-                    {/* ESTADO */}
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         p.activo
@@ -229,7 +222,6 @@ export default function ProductoTable({ productos, currentPage, totalPages }: Pr
                       </span>
                     </td>
 
-                    {/* ACCIONES */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <UpdateProducto id={p.id} />
@@ -259,12 +251,16 @@ export default function ProductoTable({ productos, currentPage, totalPages }: Pr
           Anterior
         </a>
 
-        {generatePagination().map((page, i) =>
+        {generatePagination().map((page, index) =>
           typeof page === 'string'
-            ? <span key={i} className="px-2">...</span>
+            ? (
+              <span key={`ellipsis-${index < 3 ? 'start' : 'end'}`} className="px-2">
+                ...
+              </span>
+            )
             : (
               <a
-                key={i}
+                key={page}
                 href={createPageURL(page)}
                 className={`px-3 py-1 rounded border text-sm ${
                   currentPage === page ? 'bg-rose-900 text-white' : 'hover:bg-gray-100'

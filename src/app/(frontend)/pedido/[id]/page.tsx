@@ -42,7 +42,7 @@ const LABEL_METODO: Record<string, string> = {
 // Referencia simulada para transferencia
 function generarReferencia(id: number) {
   const array = new Uint32Array(1);
-  window.crypto.getRandomValues(array);
+  globalThis.crypto.getRandomValues(array);
   const randomNum = Math.floor((array[0] / (0xffffffff + 1)) * 9000 + 1000);
   return `BRN-${String(id).padStart(6, '0')}-${randomNum}`;
 }

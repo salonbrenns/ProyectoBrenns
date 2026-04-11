@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { User, ShoppingCart, Menu, X, Bell, Heart } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
@@ -11,12 +11,11 @@ export default function Header() {
   const [cantidadCarrito, setCantidadCarrito] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [noLeidos, setNoLeidos] = useState(0)
-  const { data: session, status } = useSession()
+  const { status } = useSession() // Corregido: Se eliminó la asignación inútil de 'session'
   const router = useRouter()
   const autenticado = status === 'authenticated'
 
-  
-  const cargarCarrito = () => {
+  const cargarCarrito = useCallback(() => {
     if (status !== 'authenticated') {
       setCantidadCarrito(0)
       return
@@ -30,18 +29,20 @@ export default function Header() {
         }
       })
       .catch(() => {})
-  }
+  }, [status])
 
   useEffect(() => {
     cargarCarrito()
-    window.addEventListener('cart-updated', cargarCarrito)
-    window.addEventListener('storage', cargarCarrito)
+    
+    // Corregido: Uso de globalThis en lugar de window
+    globalThis.addEventListener('cart-updated', cargarCarrito)
+    globalThis.addEventListener('storage', cargarCarrito)
 
     return () => {
-      window.removeEventListener('cart-updated', cargarCarrito)
-      window.removeEventListener('storage', cargarCarrito)
+      globalThis.removeEventListener('cart-updated', cargarCarrito)
+      globalThis.removeEventListener('storage', cargarCarrito)
     }
-  }, [status])
+  }, [cargarCarrito])
 
   useEffect(() => {
     if (!autenticado) return

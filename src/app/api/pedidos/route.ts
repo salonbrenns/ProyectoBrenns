@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     const costo_envio = subtotal >= ENVIO_GRATIS_DESDE ? 0 : COSTO_ENVIO
     const total      = subtotal + costo_envio
 
-    // 4. Todo en una transacción: crear pedido + descontar stock + vaciar carrito
+    // 4. una transacción: crear pedido + descontar stock + vaciar carrito
     const pedido = await prisma.$transaction(async (tx) => {
       // 4a. Crear pedido
       const nuevoPedido = await tx.pedido.create({

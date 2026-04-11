@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import React from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { Package, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
 type Detalle = {
@@ -11,7 +10,6 @@ type Detalle = {
   precio_unitario: number
   subtotal: number
 }
-
 
 interface PedidoAdmin {
   id: number
@@ -118,7 +116,7 @@ export default function AdminPedidosPage() {
             )}
 
             {pedidosFiltrados.map(pedido => (
-              <React.Fragment key={pedido.id}>
+              <Fragment key={pedido.id}>
 
                 {/* FILA PRINCIPAL */}
                 <tr className="hover:bg-rose-50">
@@ -177,7 +175,7 @@ export default function AdminPedidosPage() {
                   </tr>
                 )}
 
-              </React.Fragment>
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -186,8 +184,7 @@ export default function AdminPedidosPage() {
   )
 }
 
-
-function DetailPedido({ detalles }: { detalles: Detalle[] }) {
+function DetailPedido({ detalles }: { readonly detalles: Detalle[] }) {
   return (
     <div className="space-y-1">
       {detalles.map((d) => (

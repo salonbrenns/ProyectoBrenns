@@ -82,10 +82,13 @@ export default function VariantesEditor({ initialVariantes }: Props) {
         {variantes.map((v, i) => (
           <div key={v.id ?? `nueva-${i}`} className="border border-gray-200 rounded-xl overflow-hidden">
 
-            <button
-              type="button"
-              className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-rose-50 transition-colors"
+            {/* ── Cabecera del acordeón: div en lugar de button para evitar button>button ── */}
+            <div
+              role="button"
+              tabIndex={0}
+              className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-rose-50 transition-colors cursor-pointer"
               onClick={() => setExpandido(expandido === i ? null : i)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpandido(expandido === i ? null : i) }}
             >
               <div className="flex items-center gap-3">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${v.activo ? 'bg-green-400' : 'bg-gray-300'}`} />
@@ -111,7 +114,7 @@ export default function VariantesEditor({ initialVariantes }: Props) {
                   : <ChevronDown className="w-4 h-4 text-gray-400" />
                 }
               </div>
-            </button>
+            </div>
 
             {/* Inputs ocultos */}
             {v.id && <input type="hidden" name={`variante_id_${i}`} value={v.id} />}

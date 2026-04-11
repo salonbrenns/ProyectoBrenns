@@ -256,9 +256,15 @@ function UltimasCompras() {
                   Pedido #{String(p.id).padStart(6, "0")}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
-                  {p.detalles.map(d =>
-                    `${d.nombre_producto}${d.descripcion_variante ? ` (${d.descripcion_variante})` : ""} ×${d.cantidad}`
-                  ).join(" · ")}
+                {p.detalles.map(d => {
+                  const partes = [
+                  d.nombre_producto,
+                  d.descripcion_variante ? `(${d.descripcion_variante})` : null,
+                   `×${d.cantidad}`
+                 ].filter(Boolean)
+
+                  return partes.join(" ")
+                  }).join(" · ")}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {new Date(p.fecha_pedido).toLocaleDateString("es-MX", {

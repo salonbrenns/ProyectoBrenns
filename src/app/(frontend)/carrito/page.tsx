@@ -45,7 +45,7 @@ function CarritoContenido() {
           <h1 className="text-3xl font-black text-gray-900">
             Tu Carrito{' '}
             <span className="ml-2 text-lg font-semibold text-gray-400">
-              ({totalItems} artículo{totalItems !== 1 ? 's' : ''})
+              ({totalItems} artículo{totalItems === 1 ? '' : 's'})
             </span>
           </h1>
         </div>

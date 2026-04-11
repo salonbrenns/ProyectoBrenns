@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
   // Verificar stock
   const variante = await prisma.variante.findUnique({ where: { id: variante_id } })
-  if (!variante || !variante.activo) {
+  if (!variante?.activo) {
     return NextResponse.json({ error: 'Variante no disponible' }, { status: 404 })
   }
 
@@ -118,7 +118,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 // ─── DELETE /api/carrito ──────────────────────────────────────────────────────
-// Elimina un item. Query param: ?id=X  o body vacío para vaciar todo
+// Elimina un item. Query param: ?id=X  o body vacío para vaciar 
 
 export async function DELETE(req: NextRequest) {
   const usuarioId = await getUsuarioId()

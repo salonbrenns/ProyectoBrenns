@@ -6,7 +6,7 @@ import DetalleProductoClient from '@/components/productos/DetalleProductoclient'
 export default async function DetalleProductoPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  readonly params: Promise<{ id: string }>
 }) {
   const { id } = await params
 
@@ -29,7 +29,7 @@ export default async function DetalleProductoPage({
     ? (raw.imagen as string[]).filter((u): u is string => typeof u === 'string')
     : []
 
-  // Serializar todo a tipos planos (sin Decimal, sin Date complejos)
+ 
   const producto = {
     id:          raw.id,
     nombre:      raw.nombre,
