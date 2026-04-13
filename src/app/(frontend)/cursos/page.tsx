@@ -1,147 +1,198 @@
-// src/app/cursos/page.tsx
 "use client"
 
 import Image from "next/image"
 import Link from "next/link"
-import { Heart, User } from "lucide-react"
-import { useState } from "react"
-// 1. Importar el componente modular FilterSidebar
-import FilterSidebar from '@/components/ui/filter-sidebar'; 
+import { Loader2, Sparkles, SearchX, Heart } from "lucide-react"
+import { useEffect, useState, useMemo } from "react"
+import FiltroServicios from "@/components/ui/FiltroCursos"
+import Paginacion from "@/components/ui/paginacion"
 
-const cursosData = [ // Renombrado a cursosData para claridad
-  { id: 1, titulo: "Acrílico Escultural: Nivel Intermedio", instructora: "Brenda García", nivel: "Intermedio", duracion: "4 semanas", precio: 2500, img: "/cursos/curso-aclirico.jpg", cupos: 3 },
-  { id: 2, titulo: "Gelish Artist: Nivel Avanzado", instructora: "Brenda Garcia",nivel: "Avanzado", duracion: "3 semanas", precio: 3200, img: "/cursos/curso-gelish.jpg", cupos: 5 },
-  { id: 3, titulo: "Manicure Clásica Semipermanente", instructora: "Brenda Garcia", nivel: "Principiante", duracion: "1 día", precio: 380, img: "/cursos/curso-nail.jpg", cupos: 15 },
-]
+type Curso = {
+  id: number
+  titulo: string
+  precio_total: number
+  nivel: string | null
+  imagenes: string[] | null
+}
 
-// ⚠️ Se elimina la definición del componente SidebarFiltros.
+const POR_PAGINA = 12
 
 export default function CursosPage() {
-    const [busqueda, setBusqueda] = useState("")
-    // ⚠️ CAMBIO DE ESTADO: Ahora usamos un array de strings (como en servicios) para manejar los niveles
-    // Esto se alinea con el componente FilterSidebar que usa checkboxes.
-    const [nivelesSeleccionados, setNivelesSeleccionados] = useState<string[]>([])
+  const [cursos, setCursos] = useState<Curso[]>([])
+  const [cargando, setCargando] = useState(true)
+  const [busqueda, setBusqueda] = useState("")
+  const [nivelesSeleccionados, setNivelesSeleccionados] = useState<string[]>([])
+  const [pagina, setPagina] = useState(1)
 
-    // Definir los niveles disponibles (excluyendo "Todos" para el control de checkbox)
-    const nivelesDisponibles = Array.from(new Set(cursosData.map(c => c.nivel)));
+  useEffect(() => {
+    fetch("/api/cursos")
+      .then(r => r.json())
+      .then(data => {
+        setCursos(data.cursos || [])
+        setCargando(false)
+      })
+      .catch(() => setCargando(false))
+  }, [])
 
-    // Función para manejar el estado de los niveles (seleccionar/deseleccionar)
-    const toggleNivel = (nivel: string) => {
-        setNivelesSeleccionados(prev => 
-            prev.includes(nivel) 
-                ? prev.filter(n => n !== nivel) // Deseleccionar
-                : [...prev, nivel]              // Seleccionar
-        );
-    };
+  const nivelesDisponibles = useMemo(() =>
+    Array.from(new Set(cursos.map(c => c.nivel).filter(Boolean))) as string[]
+  , [cursos])
 
-    // Función para limpiar todos los filtros a pasar al Sidebar
-    const limpiarFiltros = () => {
-        setBusqueda("");
-        setNivelesSeleccionados([]);
-    };
-
-
-    // LÓGICA DE FILTRADO
-    const cursosFiltrados = cursosData
-        .filter(c => c.titulo.toLowerCase().includes(busqueda.toLowerCase()) || c.instructora.toLowerCase().includes(busqueda.toLowerCase()))
-        .filter(c => {
-            // Si no hay niveles seleccionados, muestra todos.
-            if (nivelesSeleccionados.length === 0) return true;
-            // Si hay niveles, muestra solo los que coincidan.
-            return nivelesSeleccionados.includes(c.nivel);
-        });
-
-    return (
-        <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6">
-
-                {/* Título principal */}
-                <h1 className="text-center text-4xl sm:text-5xl md:text-6xl font-bold text-pink-600 mb-10 lg:mt-0 mt-4">
-                    Conoce de nuestros Cursos
-                </h1>
-
-                {/* ESTRUCTURA PRINCIPAL: GRID DE 4 COLUMNAS EN LG */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    
-                    {/* COLUMNA 1: BARRA LATERAL (Usando el componente FilterSidebar) */}
-                    <div className="lg:col-span-1">
-                        <FilterSidebar 
-                            title="Filtrar por:"
-                            busqueda={busqueda} 
-                            setBusqueda={setBusqueda} 
-                            // Pasar los estados de nivel al componente modular
-                            categoriasSeleccionadas={nivelesSeleccionados} 
-                            categoriasDisponibles={nivelesDisponibles}
-                            toggleCategoria={toggleNivel} 
-                            limpiarFiltros={limpiarFiltros}
-                        />
-                    </div>
-
-                    {/* COLUMNAS 2, 3, 4: CONTENIDO PRINCIPAL (Grid de Cursos) */}
-                    <div className="lg:col-span-3">
-                        
-                     
-
-                        {/* Grid de cursos */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                            {cursosFiltrados.map((curso) => (
-                                <article key={curso.id} className="group bg-white rounded-3xl shadow-xl overflow-hidden border border-pink-100 transition-all hover:shadow-2xl">
-                                    <Link href={`/curso/${curso.id}`}>
-                                        <div className="relative h-72 overflow-hidden bg-gray-100">
-                                            <Image src={curso.img} alt={curso.titulo} fill sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                                            <button onClick={(e) => e.stopPropagation()} className="absolute top-3 right-3 bg-white/90 p-2.5 rounded-full shadow-lg hover:bg-white transition">
-                                                <Heart className="w-5 h-5 text-pink-600" />
-                                            </button>
-                                            <div className="absolute bottom-3 left-3 bg-pink-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg">
-                                                {curso.duracion}
-                                            </div>
-                                            {curso.cupos <= 5 && (
-                                                <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-lg animate-pulse">
-                                                    ¡{curso.cupos} cupos!
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="p-6 bg-gradient-to-b from-pink-50 to-white">
-                                            <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">{curso.titulo}</h3>
-                                            <div className="flex items-center gap-2 text-gray-700 mb-2">
-                                                <User className="w-5 h-5 text-pink-600" />
-                                                <span className="font-medium">{curso.instructora}</span>
-                                            </div>
-                                            <p className="text-3xl font-bold text-pink-600 mt-4">
-                                                ${curso.precio.toLocaleString()}
-                                                <span className="text-lg font-normal text-gray-700"> MXN</span>
-                                            </p>
-                                        </div>
-
-                                        <div className="px-6 pb-6">
-                                            <button className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-4 rounded-full transition shadow-lg">
-                                                Ver Detalle
-                                            </button>
-                                        </div>
-                                    </Link>
-                                </article>
-                            ))}
-                            
-                            {/* Mensaje de no resultados */}
-                            {cursosFiltrados.length === 0 && (
-                                <div className="md:col-span-2 xl:col-span-3 text-center py-20 bg-white/50 rounded-xl mt-10 shadow-lg border border-pink-100">
-                                    <p className="text-2xl font-semibold text-gray-600">
-                                        🙁 No se encontraron cursos con los filtros aplicados.
-                                    </p>
-                                    <button 
-                                        onClick={limpiarFiltros}
-                                        className="mt-4 text-pink-600 font-bold hover:underline transition-colors"
-                                    >
-                                        Mostrar todos los cursos
-                                    </button>
-                                </div>
-                            )}
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+  const toggleNivel = (nivel: string) => {
+    setNivelesSeleccionados(prev =>
+      prev.includes(nivel) ? prev.filter(n => n !== nivel) : [...prev, nivel]
     )
+    setPagina(1)
+  }
+
+  const limpiarFiltros = () => {
+    setBusqueda("")
+    setNivelesSeleccionados([])
+    setPagina(1)
+  }
+
+  const cursosFiltrados = useMemo(() =>
+    cursos
+      .filter(c => c.titulo.toLowerCase().includes(busqueda.toLowerCase()))
+      .filter(c => nivelesSeleccionados.length === 0 || (c.nivel && nivelesSeleccionados.includes(c.nivel)))
+  , [cursos, busqueda, nivelesSeleccionados])
+
+  const totalPaginas = Math.ceil(cursosFiltrados.length / POR_PAGINA)
+  const cursosPagina = cursosFiltrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+
+  const handleBusqueda = (valor: string) => { setBusqueda(valor); setPagina(1) }
+
+  return (
+    <main className="min-h-screen bg-[#fffafa]">
+
+      {/* Hero */}
+      <div className="relative bg-gradient-to-br from-rose-900 via-pink-800 to-rose-700 py-16 px-6 overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-64 h-64 bg-pink-300 rounded-full translate-x-1/3 translate-y-1/3" />
+        </div>
+        <div className="relative max-w-[1400px] mx-auto text-center">
+          <p className="text-rose-300 text-xs font-bold uppercase tracking-[0.3em] mb-3">Formación</p>
+          <h1 className="text-4xl md:text-6xl font-black text-white mb-4 leading-tight">
+            Nuestros Cursos
+          </h1>
+          <p className="text-rose-200 text-lg max-w-xl mx-auto">
+            Aprende con los mejores profesionales en belleza y cuidado personal
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-[1400px] mx-auto px-6 py-10">
+
+      <FiltroServicios
+  busqueda={busqueda}
+  setBusqueda={handleBusqueda}
+  categoriasDisponibles={nivelesDisponibles}
+  categoriasSeleccionadas={nivelesSeleccionados}
+  toggleCategoria={toggleNivel}
+  limpiarFiltros={limpiarFiltros}
+/>
+        {!cargando && (
+          <p className="text-sm text-gray-400 mb-6">
+            {cursosFiltrados.length === cursos.length
+              ? `${cursos.length} cursos`
+              : `${cursosFiltrados.length} de ${cursos.length} cursos`}
+            {totalPaginas > 1 && ` · página ${pagina} de ${totalPaginas}`}
+          </p>
+        )}
+
+        {cargando && (
+          <div className="flex flex-col items-center justify-center py-40">
+            <div className="relative">
+              <Loader2 className="w-16 h-16 text-rose-400 animate-spin" />
+              <Sparkles className="w-6 h-6 text-yellow-400 absolute -top-2 -right-2 animate-pulse" />
+            </div>
+            <p className="text-rose-600 font-medium animate-pulse mt-4">Cargando cursos...</p>
+          </div>
+        )}
+
+        {!cargando && cursosPagina.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {cursosPagina.map((curso) => {
+              const imagen = curso.imagenes?.[0] || null
+              return (
+                <article
+                  key={curso.id}
+                  className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl border border-pink-50 overflow-hidden transition-all duration-500 hover:-translate-y-2"
+                >
+                  <Link href={`/curso/${curso.id}`}>
+                    <div className="relative h-64 bg-pink-50 overflow-hidden">
+                      {imagen ? (
+                        <Image
+                          src={imagen}
+                          alt={curso.titulo}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-6xl">🎓</div>
+                      )}
+                      {curso.nivel && (
+                        <div className="absolute bottom-4 left-4 bg-white/90 px-4 py-1.5 rounded-full text-xs font-bold border">
+                          {curso.nivel}
+                        </div>
+                      )}
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+                        className="absolute top-4 right-4 bg-white p-2 rounded-full shadow hover:bg-pink-600 hover:text-white"
+                      >
+                        <Heart className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-xl font-bold mb-3 line-clamp-1">{curso.titulo}</h3>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black">
+                          ${Number(curso.precio_total).toLocaleString()}
+                        </span>
+                        <span className="text-xs text-gray-400">MXN</span>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="px-6 pb-6">
+                    <Link href={`/curso/${curso.id}`}>
+                      <button className="w-full bg-gray-900 hover:bg-pink-600 text-white font-bold py-3.5 rounded-2xl transition">
+                        Ver Curso
+                      </button>
+                    </Link>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
+
+        {!cargando && cursosFiltrados.length === 0 && (
+          <div className="text-center py-32 bg-white rounded-[3rem] shadow-inner border-2 border-dashed border-rose-100">
+            <div className="mb-6 flex justify-center">
+              <SearchX className="w-16 h-16 text-rose-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-800 mb-2">No encontramos cursos</p>
+            <p className="text-gray-500 mb-8">Intenta ajustando los filtros o la búsqueda.</p>
+            <button onClick={limpiarFiltros}
+              className="px-8 py-3 bg-rose-700 text-white font-bold rounded-full hover:bg-rose-800 transition shadow-xl">
+              Ver todos los cursos
+            </button>
+          </div>
+        )}
+
+        <Paginacion
+          paginaActual={pagina}
+          totalPaginas={totalPaginas}
+          onChange={(p) => { setPagina(p); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+        />
+
+        <footer className="text-center mt-20 pt-10 border-t border-rose-100">
+          <p className="text-gray-400 font-medium italic">
+            Actualizamos nuestros cursos regularmente.
+          </p>
+        </footer>
+      </div>
+    </main>
+  )
 }

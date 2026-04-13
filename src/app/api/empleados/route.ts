@@ -9,5 +9,23 @@ export async function GET() {
     AND activo = true
     ORDER BY nombre ASC
   `
-  return NextResponse.json(empleados)
+
+  // Para cada empleado, obtener sus días
+  const empleadosConDias = await Promise.all(
+    empleados.map(async (e) => {
+      const dias = await prisma.empleadoDia.findMany({
+        where: { usuario_id: e.id },
+        select: { dia_semana: true },
+        orderBy: { dia_semana: "asc" },
+      })
+      return {
+        id:     e.id,
+        nombre: e.nombre,
+        imagen: null,
+        dias:   dias.map(d => d.dia_semana),
+      }
+    })
+  )
+
+  return NextResponse.json(empleadosConDias)
 }

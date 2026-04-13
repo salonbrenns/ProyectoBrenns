@@ -1,28 +1,47 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "../../../../../auth"
+import { auth } from "@/../auth"
+
+async function isAdmin() {
+  const session = await auth()
+  return session?.user?.role === "ADMIN"
+}
 
 export async function GET() {
-  const session = await auth()
-  const role = session?.user?.role
-  
-  if (role !== "ADMIN" && role !== "EMPLEADO") {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
+  // Lista de perfiles de empleados para el panel admin
+  const empleados = await prisma.empleado.findMany({
+    where: { activo: true },
+    orderBy: { orden: "asc" },
+    select: {
+      id:          true,
+      nombre:      true,
+      puesto:      true,
+      imagen:      true,
+      descripcion: true,
+      orden:       true,
+    },
+  })
 
-  try {
-    // EL CAMBIO ESTÁ AQUÍ: El tipo <> va pegado a $queryRaw
-    const empleados = await prisma.$queryRaw<{ id: number; nombre: string; correo: string }[]>`
-      SELECT id, nombre, correo
-      FROM seguridad.tblusuarios
-      WHERE rol::text = 'EMPLEADO'
-      AND activo = true
-      ORDER BY nombre ASC
-    `
+  return NextResponse.json(empleados)
+}
 
-    return NextResponse.json(empleados)
-  } catch (error) {
-    console.error("Error al obtener empleados:", error)
-    return NextResponse.json({ error: "Error interno" }, { status: 500 })
-  }
+export async function POST(req: NextRequest) {
+  if (!await isAdmin()) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+
+  const { nombre, puesto, descripcion, imagen, orden } = await req.json()
+  if (!nombre || !puesto) return NextResponse.json({ error: "Nombre y puesto son requeridos" }, { status: 400 })
+
+  const empleado = await prisma.empleado.create({
+    data: {
+      nombre,
+      puesto,
+      descripcion,
+      imagen,
+      orden:     orden ?? 0,
+      updatedAt: new Date(),
+      // ← ya no se crean días aquí, se asignan después desde [id]/dias
+    },
+  })
+
+  return NextResponse.json(empleado, { status: 201 })
 }

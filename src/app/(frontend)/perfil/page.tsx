@@ -1,14 +1,21 @@
+// src/app/(frontend)/perfil/page.tsx
 "use client"
 
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
-import { Calendar, Mail, Phone, Edit2, Heart, Clock, CreditCard, Loader2 } from "lucide-react"
+import {
+  Calendar, Mail, Phone, Edit2, Heart,
+  Clock, CreditCard, Loader2
+} from "lucide-react"
 import Breadcrumb from "@/components/Breadcrumb"
 import EditarPerfilModal from "@/components/ui/EditarPerfilModal"
 import { useFavoritos } from "@/hooks/useFavoritos"
+import Image from "next/image"
+import Toast from "@/components/ui/Toast"
 
 interface CustomUser {
+  id?: number | string
   name?: string | null
   email?: string | null
   image?: string | null
@@ -16,273 +23,303 @@ interface CustomUser {
   telefono?: string | null
 }
 
-export default function PerfilPage() {
-  const { data: session, status } = useSession()
-  const [modalAbierto, setModalAbierto] = useState(false)
-  const [datosLocales, setDatosLocales] = useState<{
-    nombre?: string
-    correo?: string
-    telefono?: string | null
-  }>({})
+type PedidoDetalle = { nombre_producto: string; cantidad: number }
+type Pedido = {
+  id: number
+  fecha_pedido: string
+  estado: string
+  total: number
+  detalles: PedidoDetalle[]
+}
+type Cita = {
+  fecha: string
+  hora: string
+  estado: string
+  servicio: { nombre: string; precio: number }
+}
 
-  // ── Contador de pedidos ──────────────────────────────────────
+const ESTADO_PEDIDO: Record<string, string> = {
+  PENDIENTE: "bg-yellow-100 text-yellow-800",
+  PAGADO: "bg-blue-100 text-blue-800",
+  ENVIADO: "bg-violet-100 text-violet-900",
+  ENTREGADO: "bg-green-100 text-green-800",
+  CANCELADO: "bg-red-100 text-red-800",
+}
+
+const ESTADO_CITA: Record<string, string> = {
+  PENDIENTE: "bg-yellow-100 text-yellow-800",
+  CONFIRMADA: "bg-green-100 text-green-800",
+  CANCELADA: "bg-red-100 text-red-800",
+  COMPLETADA: "bg-blue-100 text-blue-800",
+}
+
+function fotoKey(userId?: number | string) {
+  return `brenns_foto_perfil_${userId ?? "anon"}`
+}
+
+export default function PerfilPage() {
+  const { data: session, status, update } = useSession()
+  const [modalAbierto, setModalAbierto] = useState(false)
+  const [datosLocales, setDatosLocales] = useState<Partial<CustomUser>>({})
   const [totalPedidos, setTotalPedidos] = useState<number | null>(null)
+  const [totalCitas, setTotalCitas] = useState<number | null>(null)
+  const { favoritos } = useFavoritos()
+  const [fotoSubiendo, setFotoSubiendo] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "warning" } | null>(null)
+
+  const user = session?.user as CustomUser | undefined
+
+  useEffect(() => {
+    if (!user?.id) return
+    const cached = localStorage.getItem(fotoKey(user.id))
+    if (cached && !user.image) {
+      setDatosLocales(prev => ({ ...prev, image: cached }))
+    }
+  }, [user?.id, user?.image])
+
+  useEffect(() => {
+    if (user?.image) {
+      setDatosLocales(prev => ({ ...prev, image: user.image ?? undefined }))
+    }
+  }, [user?.image])
 
   useEffect(() => {
     if (status !== "authenticated") return
-    fetch("/api/pedidos")
-      .then(r => r.json())
-      .then(data => setTotalPedidos(Array.isArray(data) ? data.length : 0))
+    fetch("/api/pedidos").then(r => r.json())
+      .then(d => setTotalPedidos(Array.isArray(d) ? d.length : 0))
       .catch(() => setTotalPedidos(0))
-  }, [status])
 
-  // ── Contador de favoritos (desde hook) ───────────────────────
-  const { favoritos } = useFavoritos()
+    fetch("/api/citas").then(r => r.json())
+      .then(d => setTotalCitas(Array.isArray(d.citas) ? d.citas.length : 0))
+      .catch(() => setTotalCitas(0))
+  }, [status])
 
   if (status === "loading") {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-pink-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando perfil...</p>
-        </div>
-      </main>
+      <div className="min-h-screen bg-[#fff8fa] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-rose-500 animate-spin" />
+      </div>
     )
   }
 
-  if (!session) return null
+  if (!session?.user) return null
 
-  const user      = session.user as CustomUser
-  const nombre    = datosLocales.nombre   ?? user?.name  ?? "Usuario"
-  const correo    = datosLocales.correo   ?? user?.email ?? ""
-  const telefono  = datosLocales.telefono ?? user?.telefono ?? "No proporcionado"
-  const primerLetra   = nombre.charAt(0).toUpperCase()
-  const fechaRegistro = new Date().toLocaleDateString("es-MX", { month: "long", year: "numeric" })
+  const nombre = datosLocales.name ?? user?.name ?? "Usuario"
+  const correo = datosLocales.email ?? user?.email ?? ""
+  const telefono = datosLocales.telefono ?? user?.telefono ?? null
+  const fotoPerfil = datosLocales.image ?? user?.image ?? null
+  const primerLetra = nombre.charAt(0).toUpperCase()
+  const fechaReg = new Date().toLocaleDateString("es-MX", { month: "long", year: "numeric" })
+
+  const handleSubirFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFotoSubiendo(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const resUpload = await fetch("/api/usuario/upload-foto", { method: "POST", body: formData })
+      const uploadData = await resUpload.json()
+      if (!resUpload.ok) throw new Error(uploadData.error || "Error")
+
+      await fetch("/api/usuario/foto", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: uploadData.url }),
+      })
+
+      if (user?.id) localStorage.setItem(fotoKey(user.id), uploadData.url)
+      setDatosLocales(prev => ({ ...prev, image: uploadData.url }))
+      await update({ image: uploadData.url })
+      setToast({ message: "✅ Foto actualizada", type: "success" })
+    } catch {
+      setToast({ message: "Error al subir foto", type: "error" })
+    } finally {
+      setFotoSubiendo(false)
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-8 sm:py-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <main className="min-h-screen bg-[#fff8fa] py-10">
+      <div className="max-w-6xl mx-auto px-4">
+        <Breadcrumb items={[{ label: "Inicio", href: "/" }, { label: "Mi Perfil", href: "#", active: true }]} />
 
-        <Breadcrumb items={[
-          { label: "Inicio", href: "/" },
-          { label: "Mi Perfil", href: "#", active: true }
-        ]} />
-
-        {/* Header del perfil */}
-        <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-10 mb-8 border border-pink-100">
-          <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+        {/* ── Header / Hero ── */}
+        <div className="bg-white border border-[#ffd6e3] rounded-[2rem] p-8 mb-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+          <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="relative">
-              <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-pink-400 to-pink-600 rounded-full flex items-center justify-center text-white text-5xl sm:text-6xl font-bold shadow-xl">
-                {primerLetra}
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md ring-2 ring-rose-100 bg-rose-50">
+                {fotoPerfil ? (
+                  <Image src={fotoPerfil} alt="Perfil" width={96} height={96} className="object-cover w-full h-full" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-rose-500 text-4xl font-bold">{primerLetra}</div>
+                )}
               </div>
-              <button
-                onClick={() => setModalAbierto(true)}
-                className="absolute bottom-2 right-2 bg-white p-3 rounded-full shadow-lg hover:scale-110 transition"
-              >
-                <Edit2 className="w-5 h-5 text-pink-600" />
-              </button>
+              <label className="absolute bottom-0 right-0 w-8 h-8 bg-white border border-rose-200 rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition">
+                <Edit2 className="w-3.5 h-3.5 text-rose-500" />
+                <input type="file" className="hidden" onChange={handleSubirFoto} disabled={fotoSubiendo} />
+              </label>
+              {fotoSubiendo && <div className="absolute inset-0 bg-white/60 rounded-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-rose-500" /></div>}
             </div>
-
-            <div className="text-center sm:text-left flex-1">
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">{nombre}</h1>
-              <p className="text-pink-600 font-bold text-lg mt-2">
-                {user?.role === "ADMIN"   ? "Administrador" :
-                 user?.role === "DOCENTE" ? "Docente"       : "Cliente"}
+            <div className="text-center md:text-left">
+              <h1 className="text-4xl font-black text-[#3d0020]">{nombre}</h1>
+              <p className="text-rose-500 text-xs font-black uppercase tracking-[0.2em] mt-1">
+                {user?.role === "ADMIN" ? "ADMINISTRADOR" : user?.role === "DOCENTE" ? "DOCENTE" : "MIEMBRO"}
               </p>
-              <p className="text-gray-600 mt-1">Miembro desde {fechaRegistro}</p>
+              <p className="text-gray-400 text-sm mt-1">Miembro desde {fechaReg}</p>
             </div>
-
-            <button
-              onClick={() => setModalAbierto(true)}
-              className="bg-pink-600 hover:bg-pink-700 text-white font-bold px-8 py-4 rounded-full shadow-lg transition transform hover:scale-105"
-            >
-              Editar Perfil
-            </button>
           </div>
+          <button onClick={() => setModalAbierto(true)} className="bg-[#0f172a] hover:bg-rose-700 text-white font-bold px-8 py-3 rounded-full transition-all flex items-center gap-2 text-sm shadow-lg shadow-gray-200">
+            <Edit2 className="w-4 h-4" /> Editar perfil
+          </button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-
-          {/* Columna izquierda */}
-          <div className="md:col-span-1 space-y-6">
-
-            {/* Info personal */}
-            <div className="bg-white rounded-3xl shadow-xl p-6 border border-pink-100">
-              <h2 className="text-xl font-bold text-pink-600 mb-6">Información Personal</h2>
+        {/* ── Grid Principal ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Columna Izquierda (Info y Favoritos) */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white border border-[#ffd6e3] rounded-[1.5rem] p-6 shadow-sm">
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-rose-500 mb-6">Información Personal</h3>
               <div className="space-y-5">
                 <div className="flex items-center gap-4">
-                  <Mail className="w-6 h-6 text-pink-600 shrink-0" />
-                  <div className="overflow-hidden">
-                    <p className="text-sm text-gray-600">Correo</p>
-                    <p className="font-medium text-sm truncate">{correo}</p>
+                  <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+                    <Mail className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Correo</p>
+                    <p className="text-sm font-bold text-[#3d0020] truncate">{correo}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Phone className="w-6 h-6 text-pink-600 shrink-0" />
+                  <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+                    <Phone className="w-4 h-4 text-rose-400" />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-600">Teléfono</p>
-                    <p className={`font-medium text-sm ${telefono === "No proporcionado" ? "text-gray-400 italic" : "text-gray-800"}`}>
-                      {telefono}
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Teléfono</p>
+                    <p className={`text-sm font-bold ${telefono ? "text-[#3d0020]" : "text-gray-300 italic"}`}>
+                      {telefono ?? "No disponible"}
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Favoritos — clickeable para ir a /favoritos */}
-            <Link href="/favoritos">
-              <div className="bg-gradient-to-br from-pink-100 to-pink-50 rounded-3xl shadow-xl p-6 text-center hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer">
-                <Heart className="w-12 h-12 text-pink-600 mx-auto mb-4" />
-                <p className="text-4xl font-bold text-pink-600">{favoritos.length}</p>
-                <p className="text-gray-700 font-medium">Favoritos</p>
-              </div>
+            <Link href="/favoritos" className="block bg-[#fff0f5] border border-[#ffd0e0] rounded-[1.5rem] p-8 text-center group hover:scale-[1.02] transition-transform">
+              <Heart className="w-8 h-8 text-rose-500 mx-auto mb-3 fill-rose-500" />
+              <p className="text-5xl font-black text-rose-600 leading-none">{favoritos.length}</p>
+              <p className="text-xs font-black uppercase tracking-widest text-rose-400 mt-2">Favoritos</p>
             </Link>
           </div>
 
-          {/* Columna derecha */}
-          <div className="md:col-span-2 space-y-8">
-
-            {/* Estadísticas */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-
-              {/* Cursos — estático, lo trabajan tus compañeras */}
-              <div className="bg-white rounded-3xl shadow-xl p-6 text-center border border-pink-100">
-                <Calendar className="w-10 h-10 text-pink-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Cursos inscritos</p>
-              </div>
-
-              {/* Citas — estático, lo trabajan tus compañeras */}
-              <div className="bg-white rounded-3xl shadow-xl p-6 text-center border border-pink-100">
-                <Clock className="w-10 h-10 text-pink-600 mx-auto mb-3" />
-                <p className="text-3xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Citas pendientes</p>
-              </div>
-
-              {/* Compras — dinámico desde API */}
-              <Link href="/mis-cursos">
-                <div className="bg-white rounded-3xl shadow-xl p-6 text-center border border-pink-100 hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer">
-                  <CreditCard className="w-10 h-10 text-pink-600 mx-auto mb-3" />
-                  {totalPedidos === null ? (
-                    <Loader2 className="w-8 h-8 text-pink-300 animate-spin mx-auto" />
-                  ) : (
-                    <p className="text-3xl font-bold text-gray-900">{totalPedidos}</p>
-                  )}
-                  <p className="text-gray-600">Compras totales</p>
+          {/* Columna Derecha (Stats y Actividad) */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white border border-[#ffd6e3] rounded-[1.5rem] p-6 text-center shadow-sm">
+                <div className="w-10 h-10 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-5 h-5 text-rose-400" />
                 </div>
+                <p className="text-3xl font-black text-[#3d0020]">0</p>
+                <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Cursos</p>
+              </div>
+              <Link href="/mis-citas" className="bg-white border border-[#ffd6e3] rounded-[1.5rem] p-6 text-center shadow-sm hover:bg-rose-50 transition group">
+                <div className="w-10 h-10 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-white transition">
+                  <Clock className="w-5 h-5 text-rose-400" />
+                </div>
+                <p className="text-3xl font-black text-[#3d0020]">{totalCitas ?? "0"}</p>
+                <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Mis Citas</p>
+              </Link>
+              <Link href="/mis-pedidos" className="bg-white border border-[#ffd6e3] rounded-[1.5rem] p-6 text-center shadow-sm hover:bg-rose-50 transition group">
+                <div className="w-10 h-10 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-white transition">
+                  <CreditCard className="w-5 h-5 text-rose-400" />
+                </div>
+                <p className="text-3xl font-black text-[#3d0020]">{totalPedidos ?? "0"}</p>
+                <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Compras</p>
               </Link>
             </div>
 
-            {/* Últimas compras — muestra las 3 más recientes */}
-            <UltimasCompras />
-
-            <div className="text-center">
-              <p className="text-gray-600">
-                ¿Quieres ver todos tus cursos y citas?{" "}
-                <Link href="/mis-cursos" className="text-pink-600 font-bold hover:underline">
-                  Ir a Mi Historial →
-                </Link>
-              </p>
-            </div>
+            <UltimaCompraSection />
+            <UltimaCitaSection />
           </div>
         </div>
       </div>
 
-      {modalAbierto && (
-        <EditarPerfilModal
-          onClose={() => setModalAbierto(false)}
-          onActualizado={(datos) => {
-            setDatosLocales(datos)
-            setModalAbierto(false)
-          }}
-        />
-      )}
+      {modalAbierto && <EditarPerfilModal onClose={() => setModalAbierto(false)} onActualizado={setDatosLocales} />}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </main>
   )
 }
 
-// ── Últimas 3 compras ─────────────────────────────────────────
-
-function UltimasCompras() {
-  const [pedidos, setPedidos] = useState<{
-    id: number
-    estado: string
-    total: number
-    fecha_pedido: string
-    detalles: { nombre_producto: string; descripcion_variante: string | null; cantidad: number }[]
-  }[]>([])
-  const [cargando, setCargando] = useState(true)
+function UltimaCompraSection() {
+  const [pedido, setPedido] = useState<Pedido | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/pedidos")
-      .then(r => r.json())
-      .then(data => setPedidos(Array.isArray(data) ? data.slice(0, 3) : []))
-      .finally(() => setCargando(false))
+    fetch("/api/pedidos").then(r => r.json()).then(d => {
+      setPedido(Array.isArray(d) && d.length > 0 ? d[0] : null)
+      setLoading(false)
+    })
   }, [])
 
-  const ESTADO_COLOR: Record<string, string> = {
-    PENDIENTE: "bg-amber-100 text-amber-700",
-    PAGADO:    "bg-blue-100  text-blue-700",
-    ENVIADO:   "bg-purple-100 text-purple-700",
-    ENTREGADO: "bg-green-100 text-green-700",
-    CANCELADO: "bg-red-100   text-red-600",
-  }
+  return (
+    <div className="bg-white border border-[#ffd6e3] rounded-[1.5rem] p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-xs font-black uppercase tracking-widest text-[#3d0020]">Mi Última Compra</h3>
+        <Link href="/mis-pedidos" className="text-xs font-bold text-rose-500 hover:underline">Ver todas →</Link>
+      </div>
+      {loading ? (
+        <Loader2 className="w-6 h-6 animate-spin text-rose-200 mx-auto py-4" />
+      ) : pedido ? (
+        <div className="bg-[#fff8fa] border border-[#ffe4ef] rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p className="text-sm font-black text-[#3d0020]">Pedido #{String(pedido.id).padStart(6, "0")}</p>
+            <p className="text-xs text-[#b06080] mt-1">{pedido.detalles?.map(d => `${d.nombre_producto} ×${d.cantidad}`).join(" · ")}</p>
+            <p className="text-[10px] text-gray-400 mt-1">{new Date(pedido.fecha_pedido).toLocaleDateString("es-MX")}</p>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className={`text-[9px] font-black px-3 py-1 rounded-full ${ESTADO_PEDIDO[pedido.estado]}`}>{pedido.estado}</span>
+            <p className="text-lg font-black text-[#3d0020] mt-1">${pedido.total.toLocaleString("es-MX")} MXN</p>
+          </div>
+        </div>
+      ) : (
+        <p className="text-center text-sm text-gray-400 italic">No hay compras recientes.</p>
+      )}
+    </div>
+  )
+}
+
+function UltimaCitaSection() {
+  const [cita, setCita] = useState<Cita | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/citas").then(r => r.json()).then(d => {
+      setCita(Array.isArray(d.citas) && d.citas.length > 0 ? d.citas[0] : null)
+      setLoading(false)
+    })
+  }, [])
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-pink-600">Mis Últimas Compras</h2>
-        <Link href="/mis-cursos" className="text-sm text-pink-600 font-semibold hover:underline">
-          Ver todo →
-        </Link>
+    <div className="bg-white border border-[#ffd6e3] rounded-[1.5rem] p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-xs font-black uppercase tracking-widest text-[#3d0020]">Mi Última Cita</h3>
+        <Link href="/mis-citas" className="text-xs font-bold text-rose-500 hover:underline">Ver todas →</Link>
       </div>
-
-      {cargando && (
-        <div className="flex justify-center py-8">
-          <Loader2 className="w-8 h-8 text-pink-300 animate-spin" />
+      {loading ? (
+        <Loader2 className="w-6 h-6 animate-spin text-rose-200 mx-auto py-4" />
+      ) : cita ? (
+        <div className="bg-[#fff8fa] border border-[#ffe4ef] rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p className="text-sm font-black text-[#3d0020]">{cita.servicio.nombre}</p>
+            <p className="text-xs text-[#b06080] mt-1">{new Date(cita.fecha).toLocaleDateString("es-MX")} · {cita.hora}</p>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className={`text-[9px] font-black px-3 py-1 rounded-full ${ESTADO_CITA[cita.estado]}`}>{cita.estado}</span>
+            <p className="text-lg font-black text-[#3d0020] mt-1">${cita.servicio.precio.toLocaleString("es-MX")} MXN</p>
+          </div>
         </div>
-      )}
-
-      {!cargando && pedidos.length === 0 && (
-        <p className="text-gray-400 text-center py-6">Aún no tienes compras.</p>
-      )}
-
-      {!cargando && pedidos.length > 0 && (
-        <div className="space-y-4">
-          {pedidos.map(p => (
-            <div key={p.id} className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-pink-50 border border-pink-100">
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-800 text-sm">
-                  Pedido #{String(p.id).padStart(6, "0")}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                {p.detalles.map(d => {
-                  const partes = [
-                  d.nombre_producto,
-                  d.descripcion_variante ? `(${d.descripcion_variante})` : null,
-                   `×${d.cantidad}`
-                 ].filter(Boolean)
-
-                  return partes.join(" ")
-                  }).join(" · ")}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {new Date(p.fecha_pedido).toLocaleDateString("es-MX", {
-                    day: "2-digit", month: "short", year: "numeric"
-                  })}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${ESTADO_COLOR[p.estado] ?? "bg-gray-100 text-gray-600"}`}>
-                  {p.estado}
-                </span>
-                <span className="text-sm font-black text-gray-900">
-                  ${p.total.toLocaleString("es-MX")} MXN
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+      ) : (
+        <p className="text-center text-sm text-gray-400 italic">No tienes citas agendadas.</p>
       )}
     </div>
   )

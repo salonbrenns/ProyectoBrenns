@@ -1,54 +1,116 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Clock, Star, ArrowRight } from "lucide-react"
-import Link from "next/link"
+// src/components/ui/ServicioCard.tsx
+'use client'
 
-interface ServicioCardProps {
-  id: string
-  titulo: string
-  descripcion: string
-  duracion: string
-  precio: string
-  rating: number
-  categoria: string
+import Image from 'next/image'
+import Link from 'next/link'
+import { Scissors } from 'lucide-react'
+import { FavoritoServicioBoton } from './FavoritoServicioBoton'
+
+export interface ServicioCardType {
+  id:         number
+  nombre:     string
+  imagen:     string | null
+  categoria:  string   // ya normalizado desde la página
+  precio_min: number
+  disponible: boolean
+  duracion?:  string | null
 }
 
-export default function ServicioCard({ id, titulo, descripcion, duracion, precio, rating, categoria }: ServicioCardProps) {
+interface Props {
+  servicio: ServicioCardType
+}
+
+export default function ServicioCard({ servicio }: Props) {
+  const { id, nombre, imagen, categoria, precio_min, disponible, duracion } = servicio
+  const noDisponible = !disponible
+
   return (
-    <Link href={`/servicio/${id}`}>
-      <Card className="group h-full hover:shadow-2xl transition-all duration-300 border-0 bg-white/95">
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
-            <Badge variant="secondary" className="mb-2">{categoria}</Badge>
-            <div className="flex items-center gap-1 text-amber-500">
-              <Star className="w-4 h-4 fill-current" />
-              <span className="text-sm font-medium">{rating}</span>
+    <article className={`group bg-white rounded-[2rem] shadow-sm hover:shadow-2xl border border-rose-50 overflow-hidden transition-all duration-500 hover:-translate-y-2 ${noDisponible ? 'opacity-60' : ''}`}>
+      <Link href={`/servicio/${id}`} className="block">
+
+        {/* Imagen */}
+        <div className="relative h-60 overflow-hidden bg-rose-50">
+          {imagen ? (
+            <Image
+              src={imagen}
+              alt={nombre}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className="object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Scissors className="w-16 h-16 text-rose-200" />
+            </div>
+          )}
+
+          {/* Badge duración */}
+          {duracion && (
+            <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
+              {duracion}
+            </span>
+          )}
+
+          {noDisponible && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <span className="bg-white text-gray-800 text-xs font-black px-4 py-2 rounded-full shadow-lg uppercase tracking-widest">
+                No disponible
+              </span>
+            </div>
+          )}
+
+          {/* Botón favorito — aparece en hover igual que ProductoCard */}
+          <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <FavoritoServicioBoton
+              servicioId={id}
+              className="bg-white/80 backdrop-blur-md p-2 rounded-full shadow-md hover:bg-rose-600 hover:text-white transition-all"
+            />
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] uppercase tracking-widest font-black text-rose-400">
+              Servicio
+            </span>
+            {categoria && (
+              <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-400">
+                {categoria}
+              </span>
+            )}
+          </div>
+
+          <h3 className="text-base font-bold text-gray-800 mb-2 group-hover:text-rose-600 transition-colors line-clamp-2 leading-snug">
+            {nombre}
+          </h3>
+
+          {/* Precio */}
+          <div className="flex items-end gap-2 flex-wrap">
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-400 font-medium">desde</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-gray-900">
+                  ${(precio_min ?? 0).toLocaleString('es-MX')}
+                </span>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">MXN</span>
+              </div>
             </div>
           </div>
-          <CardTitle className="text-xl group-hover:text-purple-600 transition-colors">
-            {titulo}
-          </CardTitle>
-          <CardDescription className="line-clamp-2">{descripcion}</CardDescription>
-        </CardHeader>
+        </div>
+      </Link>
 
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span>{duracion}</span>
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex justify-between items-center pt-4">
-          <div>
-            <p className="text-2xl font-bold text-purple-600">{precio}</p>
-            <p className="text-xs text-muted-foreground">por sesión</p>
-          </div>
-          <Button className="group-hover:bg-purple-600 transition-colors">
-            Ver detalle <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
+      {/* CTA */}
+      <div className="px-5 pb-5">
+        <Link href={`/servicio/${id}`}>
+          <button
+            disabled={noDisponible}
+            className="w-full bg-gray-900 hover:bg-rose-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3 rounded-xl transition-all shadow-md active:scale-95 text-sm"
+          >
+            {noDisponible ? 'No disponible' : 'Ver servicio'}
+          </button>
+        </Link>
+      </div>
+    </article>
   )
 }

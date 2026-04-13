@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Loader2, Sparkles, SearchX  } from 'lucide-react'
+import { Loader2, Sparkles, SearchX } from 'lucide-react'
 import ProductoCard, { type ProductoCardType } from '@/components/ui/ProductoCard'
 import ProductosFiltros from '@/components/ui/ProductosFiltros'
 import Paginacion from '@/components/ui/paginacion'
+import { usePromociones } from "@/hooks/usePromociones"
 
 const POR_PAGINA = 12
 
@@ -15,6 +16,7 @@ export default function ProductosPage() {
   const [marcasSeleccionadas, setMarcasSeleccionadas] = useState<string[]>([])
   const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([])
   const [pagina, setPagina] = useState(1)
+  const { descuentoParaProducto, precioConDescuento } = usePromociones()
 
   useEffect(() => {
     fetch('/api/productos')
@@ -26,7 +28,6 @@ export default function ProductosPage() {
       .catch(() => setCargando(false))
   }, [])
 
-  // Opciones de filtros
   const marcasDisponibles = useMemo(() =>
     Array.from(new Set(productos.map(p => p.marca?.nombre).filter(Boolean) as string[])).sort()
   , [productos])
@@ -52,7 +53,6 @@ export default function ProductosPage() {
     setPagina(1)
   }
 
-  // Filtrado
   const productosFiltrados = useMemo(() =>
     productos
       .filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()))
@@ -60,12 +60,10 @@ export default function ProductosPage() {
       .filter(p => categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(p.categoria?.nombre ?? ''))
   , [productos, busqueda, marcasSeleccionadas, categoriasSeleccionadas])
 
-  // Paginación
   const totalPaginas = Math.ceil(productosFiltrados.length / POR_PAGINA)
   const productosPagina = productosFiltrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
 
-  // Resetear página al cambiar búsqueda
-const handleBusqueda = (valor: string) => { setBusqueda(valor); setPagina(1) }
+  const handleBusqueda = (valor: string) => { setBusqueda(valor); setPagina(1) }
 
   return (
     <main className="min-h-screen bg-[#fffafa]">
@@ -89,7 +87,6 @@ const handleBusqueda = (valor: string) => { setBusqueda(valor); setPagina(1) }
 
       <div className="max-w-[1400px] mx-auto px-6 py-10">
 
-        {/* Filtros */}
         <ProductosFiltros
           busqueda={busqueda}
           setBusqueda={handleBusqueda}
@@ -102,7 +99,6 @@ const handleBusqueda = (valor: string) => { setBusqueda(valor); setPagina(1) }
           limpiarFiltros={limpiarFiltros}
         />
 
-        {/* Contador */}
         {!cargando && (
           <p className="text-sm text-gray-400 mb-6">
             {productosFiltrados.length === productos.length
@@ -112,7 +108,6 @@ const handleBusqueda = (valor: string) => { setBusqueda(valor); setPagina(1) }
           </p>
         )}
 
-        {/* Cargando */}
         {cargando && (
           <div className="flex flex-col items-center justify-center py-40">
             <div className="relative">
@@ -123,41 +118,33 @@ const handleBusqueda = (valor: string) => { setBusqueda(valor); setPagina(1) }
           </div>
         )}
 
-        {/* Grid */}
         {!cargando && productosPagina.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {productosPagina.map(producto => (
-              <ProductoCard key={producto.id} producto={producto} />
+              <ProductoCard
+                key={producto.id}
+                producto={producto}
+                descuentoProducto={descuentoParaProducto(producto.id)}
+                precioConDescuento={(precio) => precioConDescuento(precio, producto.id)}
+              />
             ))}
           </div>
         )}
 
-{/* Sin resultados */}
-{!cargando && productosFiltrados.length === 0 && (
-  <div className="text-center py-32 bg-white rounded-[3rem] shadow-inner border-2 border-dashed border-rose-100">
-    
-    <div className="mb-6 flex justify-center">
-      <SearchX className="w-16 h-16 text-rose-400" />
-    </div>
+        {!cargando && productosFiltrados.length === 0 && (
+          <div className="text-center py-32 bg-white rounded-[3rem] shadow-inner border-2 border-dashed border-rose-100">
+            <div className="mb-6 flex justify-center">
+              <SearchX className="w-16 h-16 text-rose-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-800 mb-2">No encontramos productos</p>
+            <p className="text-gray-500 mb-8">Intenta ajustando los filtros o la búsqueda.</p>
+            <button onClick={limpiarFiltros}
+              className="px-8 py-3 bg-rose-700 text-white font-bold rounded-full hover:bg-rose-800 transition shadow-xl">
+              Ver todos los productos
+            </button>
+          </div>
+        )}
 
-    <p className="text-2xl font-bold text-gray-800 mb-2">
-      No encontramos productos
-    </p>
-
-    <p className="text-gray-500 mb-8">
-      Intenta ajustando los filtros o la búsqueda.
-    </p>
-
-    <button
-      onClick={limpiarFiltros}
-      className="px-8 py-3 bg-rose-700 text-white font-bold rounded-full hover:bg-rose-800 transition shadow-xl"
-    >
-      Ver todos los productos
-    </button>
-  </div>
-)}
-
-        {/* Paginación */}
         <Paginacion
           paginaActual={pagina}
           totalPaginas={totalPaginas}

@@ -1,62 +1,52 @@
-// src/app/api/admin/servicios/[id]/route.ts
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { auth } from "../../../../../../auth"
+// src/app/api/servicios/[id]/route.ts
+import { NextResponse } from 'next/server'
+import { prisma }       from '@/lib/prisma'
 
-async function isAdmin() {
-  const session = await auth()
-  return session?.user?.role === "ADMIN"
-}
-
-// PUT — editar servicio
 export async function PUT(
-  req: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await isAdmin()) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
     const { id } = await params
-    const body   = await req.json()
-    const { nombre, descripcion, precio, duracion, categoria, imagen, activo } = body
+    const data   = await request.json()
 
     const servicio = await prisma.servicio.update({
       where: { id: Number(id) },
       data: {
-        nombre,
-        descripcion: descripcion || null,
-        precio:      Number(precio),
-        duracion,
-        categoria,
-        imagen:      imagen || null,
-        activo:      activo ?? true,
+        nombre:       data.nombre,
+        descripcion:  data.descripcion  || null,
+        precio:       data.precio,
+        duracion:     data.duracion,
+        imagen:       data.imagen       || null,
+        beneficios:   data.beneficios   || null,
+        incluye:      data.incluye      || null,
+        activo:       data.activo       ?? true,
+        categoria_id: data.categoria_id ?? null,
+        updatedAt:    new Date(),
       },
     })
 
-    return NextResponse.json({ ok: true, servicio })
-  } catch (err) {
-    console.error("Error editando servicio:", err)
-    return NextResponse.json({ error: "Error interno" }, { status: 500 })
+    return NextResponse.json(servicio)
+  } catch {
+    return NextResponse.json({ error: 'Error al actualizar el servicio' }, { status: 500 })
   }
 }
 
-// DELETE — eliminar servicio
-export async function DELETE(
-  _: Request,
+export async function PATCH(
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await isAdmin()) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
-    const { id } = await params
-    await prisma.servicio.delete({ where: { id: Number(id) } })
-    return NextResponse.json({ ok: true })
+    const { id }     = await params
+    const { activo } = await request.json()
+
+    const servicio = await prisma.servicio.update({
+      where: { id: Number(id) },
+      data:  { activo, updatedAt: new Date() },
+    })
+
+    return NextResponse.json(servicio)
   } catch {
-    // Se añadió el guion bajo (_) para indicar que la variable no se usa intencionalmente
-    return NextResponse.json({ error: "Error interno" }, { status: 500 })
+    return NextResponse.json({ error: 'Error al actualizar el estado' }, { status: 500 })
   }
 }

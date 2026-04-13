@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+
+import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, Heart, ShoppingBag, Tag, Layers, Package, Plus, Minus, Loader2 } from 'lucide-react'
@@ -8,62 +9,71 @@ import { useCarrito } from '@/hooks/useCarrito'
 import { useFavoritos } from '@/hooks/useFavoritos'
 
 interface Variante {
-  id: number
-  tono: string | null
+  id:           number
+  tono:         string | null
   presentacion: string | null
   precio_venta: number
-  stock: number
-  imagenes: string[]
+  stock:        number
+  imagenes:     string[]
 }
 
 interface Producto {
-  id: number
-  nombre: string
-  descripcion: string | null
+  id:            number
+  nombre:        string
+  descripcion:   string | null
   imagenesPadre: string[]
-  marca: { nombre: string } | null
-  categoria: { nombre: string } | null
-  variantes: Variante[]
+  marca:         { nombre: string } | null
+  categoria:     { nombre: string } | null
+  variantes:     Variante[]
 }
 
-export default function DetalleProductoClient({ producto }: Readonly<{ producto: Producto }>) {
-  const { status } = useSession()
-  const autenticado = status === 'authenticated'
-  const { agregar } = useCarrito()
+export default function DetalleProductoClient({
+  producto,
+  descuentoProducto = 0,
+}: {
+  producto: Producto
+  descuentoProducto?: number
+}) {
+  const { status }   = useSession()
+  const autenticado  = status === 'authenticated'
+  const { agregar }  = useCarrito()
   const { toggle, esFavorito } = useFavoritos()
-  const [varianteActiva, setVarianteActiva] = useState<Variante>(producto.variantes[0])
+
+  const tonos          = [...new Set(producto.variantes.map(v => v.tono).filter(Boolean))]         as string[]
+  const presentaciones = [...new Set(producto.variantes.map(v => v.presentacion).filter(Boolean))] as string[]
+  const hayTonos          = tonos.length > 0
+  const hayPresentaciones = presentaciones.length > 0
+
+  const [tonoSel,         setTonoSel]         = useState<string | null>(producto.variantes[0]?.tono ?? null)
+  const [presentacionSel, setPresentacionSel] = useState<string | null>(producto.variantes[0]?.presentacion ?? null)
   const [imagenActivaIdx, setImagenActivaIdx] = useState(0)
-  const [cantidad, setCantidad] = useState(1)
-  const [agregando, setAgregando] = useState(false)
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  const [cantidad,        setCantidad]        = useState(1)
+  const [agregando,       setAgregando]       = useState(false)
+  const [toastMsg,        setToastMsg]        = useState<string | null>(null)
 
-  const imagenes = varianteActiva.imagenes.length > 0 ? varianteActiva.imagenes : producto.imagenesPadre
+  // ✅ varianteActiva es computed (useMemo), elimina el useEffect con setState
+  const varianteActiva = useMemo(() => {
+    return producto.variantes.find(v => {
+      const okTono = !hayTonos          || v.tono         === tonoSel
+      const okPres = !hayPresentaciones || v.presentacion === presentacionSel
+      return okTono && okPres
+    }) ?? producto.variantes[0]
+  }, [tonoSel, presentacionSel, producto.variantes, hayTonos, hayPresentaciones])
 
+  // ✅ Resetear imagen y cantidad cuando cambia la variante
   useEffect(() => {
     setImagenActivaIdx(0)
     setCantidad(1)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [varianteActiva.id])
 
-  const imagenPrincipal = imagenes[imagenActivaIdx] ?? null
+  const imagenes           = varianteActiva.imagenes.length > 0 ? varianteActiva.imagenes : producto.imagenesPadre
+  const imagenPrincipal    = imagenes[imagenActivaIdx] ?? null
   const imagenesMiniaturas = imagenes
-  const sinStock = varianteActiva.stock === 0
-  const maxCantidad = varianteActiva.stock
-  const tonos = [...new Set(producto.variantes.map(v => v.tono).filter(Boolean))] as string[]
-  const presentaciones = [...new Set(producto.variantes.map(v => v.presentacion).filter(Boolean))] as string[]
-  const hayTonos = tonos.length > 0
-  const hayPresentaciones = presentaciones.length > 0
-
-  const [tonoSel, setTonoSel] = useState<string | null>(varianteActiva.tono)
-  const [presentacionSel, setPresentacionSel] = useState<string | null>(varianteActiva.presentacion)
-
-  useEffect(() => {
-    const match = producto.variantes.find(v => {
-      const okTono = !hayTonos || v.tono === tonoSel
-      const okPres = !hayPresentaciones || v.presentacion === presentacionSel
-      return okTono && okPres
-    })
-    if (match) setVarianteActiva(match)
-  }, [tonoSel, presentacionSel, producto.variantes, hayTonos, hayPresentaciones])
+  const sinStock           = varianteActiva.stock === 0
+  const maxCantidad        = varianteActiva.stock
+  const precioOriginal     = varianteActiva.precio_venta
+  const precioFinal        = descuentoProducto > 0 ? precioOriginal * (1 - descuentoProducto / 100) : null
 
   const mostrarToast = (msg: string) => {
     setToastMsg(msg)
@@ -85,32 +95,6 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
 
   const esFav = autenticado && esFavorito(producto.id)
 
-  // --- Lógica extraída para resolver advertencias de SonarQube ---
-
-  const getStockStatus = () => {
-    if (sinStock) return <span className="text-sm font-semibold text-red-500">Sin stock disponible</span>
-    if (varianteActiva.stock <= 5) return <span className="text-sm font-semibold text-amber-600">¡Solo quedan {varianteActiva.stock} unidades!</span>
-    return <span className="text-sm font-semibold text-green-600">En stock</span>
-  }
-
-  const getButtonContent = () => {
-    if (agregando) return <><Loader2 className="w-5 h-5 animate-spin" /> Agregando...</>
-    if (sinStock) return 'Producto agotado'
-    return <><ShoppingBag className="w-5 h-5" /> Agregar al carrito</>
-  }
-
-  const getTonoClass = (tono: string, disponible: boolean) => {
-    if (tonoSel === tono) return 'bg-rose-700 text-white border-rose-700 shadow-md'
-    if (disponible) return 'bg-white text-gray-700 border-gray-300 hover:border-rose-400'
-    return 'bg-gray-50 text-gray-400 border-gray-200 line-through cursor-not-allowed'
-  }
-
-  const getPresClass = (pres: string, disponible: boolean) => {
-    if (presentacionSel === pres) return 'bg-rose-700 text-white border-rose-700 shadow-md'
-    if (disponible) return 'bg-white text-gray-700 border-gray-300 hover:border-rose-400'
-    return 'bg-gray-50 text-gray-400 border-gray-200 line-through cursor-not-allowed'
-  }
-
   return (
     <div className="min-h-screen bg-[#fffafa]">
       {toastMsg && (
@@ -118,13 +102,17 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
           {toastMsg}
         </div>
       )}
+
       <div className="max-w-7xl mx-auto px-6 pt-8">
         <Link href="/catalogo" className="inline-flex items-center gap-2 text-rose-600 hover:text-rose-800 font-semibold text-sm transition-colors">
           <ArrowLeft className="w-4 h-4" /> Volver al catálogo
         </Link>
       </div>
+
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
+
+          {/* Galería */}
           <div className="space-y-3 lg:sticky lg:top-8">
             <div className="relative rounded-3xl overflow-hidden bg-rose-50 shadow-xl aspect-square">
               {imagenPrincipal ? (
@@ -141,20 +129,19 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
                   <span className="bg-white text-gray-800 text-sm font-black px-6 py-3 rounded-full shadow-lg uppercase tracking-widest">Agotado</span>
                 </div>
               )}
-              <button
-                onClick={handleFavorito}
+              <button onClick={handleFavorito}
                 aria-label={esFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                 className={`absolute top-4 right-4 p-3 rounded-full shadow-xl transition-all backdrop-blur-sm ${
                   esFav ? 'bg-rose-600 text-white' : 'bg-white/90 text-rose-600 hover:bg-rose-600 hover:text-white'
-                }`}
-              >
+                }`}>
                 <Heart className={`w-5 h-5 ${esFav ? 'fill-white' : ''}`} />
               </button>
             </div>
+
             {imagenesMiniaturas.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
                 {imagenesMiniaturas.map((url, i) => (
-                  <button key={url} onClick={() => setImagenActivaIdx(i)}
+                  <button key={i} onClick={() => setImagenActivaIdx(i)}
                     className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
                       imagenActivaIdx === i ? 'border-rose-500 shadow-md' : 'border-rose-100 hover:border-rose-300'
                     }`}>
@@ -165,6 +152,7 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
             )}
           </div>
 
+          {/* Info */}
           <div className="space-y-6">
             <div className="flex items-center gap-3 flex-wrap">
               {producto.marca && (
@@ -178,14 +166,34 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
                 </span>
               )}
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight">
-              {producto.nombre}
-            </h1>
+
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight">{producto.nombre}</h1>
+
             <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl p-6 border border-rose-100">
-              <p className="text-4xl font-black text-gray-900">
-                ${varianteActiva.precio_venta.toLocaleString('es-MX')}
-                <span className="text-lg font-semibold text-gray-400 ml-2">MXN</span>
-              </p>
+              {precioFinal ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="text-4xl font-black text-gray-900">
+                      ${precioFinal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-lg font-semibold text-gray-400 ml-2">MXN</span>
+                    </p>
+                    <span className="bg-rose-600 text-white text-sm font-black px-3 py-1 rounded-full">
+                      -{descuentoProducto}%
+                    </span>
+                  </div>
+                  <p className="text-base text-gray-400 line-through">
+                    Precio normal: ${precioOriginal.toLocaleString('es-MX')} MXN
+                  </p>
+                  <p className="text-sm text-green-600 font-bold">
+                    Ahorras ${(precioOriginal - precioFinal).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                  </p>
+                </div>
+              ) : (
+                <p className="text-4xl font-black text-gray-900">
+                  ${precioOriginal.toLocaleString('es-MX')}
+                  <span className="text-lg font-semibold text-gray-400 ml-2">MXN</span>
+                </p>
+              )}
             </div>
 
             {hayTonos && (
@@ -200,7 +208,11 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
                     )
                     return (
                       <button key={tono} onClick={() => setTonoSel(tono)} disabled={!disponible}
-                        className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-all ${getTonoClass(tono, disponible)}`}>
+                        className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-all ${
+                          tonoSel === tono ? 'bg-rose-700 text-white border-rose-700 shadow-md'
+                            : disponible ? 'bg-white text-gray-700 border-gray-300 hover:border-rose-400'
+                            : 'bg-gray-50 text-gray-400 border-gray-200 line-through cursor-not-allowed'
+                        }`}>
                         {tono}
                       </button>
                     )
@@ -221,7 +233,11 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
                     )
                     return (
                       <button key={pres} onClick={() => setPresentacionSel(pres)} disabled={!disponible}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${getPresClass(pres, disponible)}`}>
+                        className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                          presentacionSel === pres ? 'bg-rose-700 text-white border-rose-700 shadow-md'
+                            : disponible ? 'bg-white text-gray-700 border-gray-300 hover:border-rose-400'
+                            : 'bg-gray-50 text-gray-400 border-gray-200 line-through cursor-not-allowed'
+                        }`}>
                         {pres}
                       </button>
                     )
@@ -236,20 +252,24 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
 
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-gray-400" />
-              {getStockStatus()}
+              {sinStock ? (
+                <span className="text-sm font-semibold text-red-500">Sin stock disponible</span>
+              ) : varianteActiva.stock <= 5 ? (
+                <span className="text-sm font-semibold text-amber-600">¡Solo quedan {varianteActiva.stock} unidades!</span>
+              ) : (
+                <span className="text-sm font-semibold text-green-600">En stock</span>
+              )}
             </div>
 
             {!sinStock && autenticado && (
               <div className="flex items-center gap-4">
                 <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Cantidad:</p>
                 <div className="flex items-center bg-gray-50 rounded-full border border-gray-200">
-                  <button onClick={() => setCantidad(c => Math.max(1, c - 1))}
-                    className="p-2.5 hover:bg-gray-100 rounded-full transition">
+                  <button onClick={() => setCantidad(c => Math.max(1, c - 1))} className="p-2.5 hover:bg-gray-100 rounded-full transition">
                     <Minus className="w-4 h-4" />
                   </button>
                   <span className="px-5 font-bold text-base">{cantidad}</span>
-                  <button onClick={() => setCantidad(c => Math.min(maxCantidad, c + 1))}
-                    className="p-2.5 hover:bg-gray-100 rounded-full transition">
+                  <button onClick={() => setCantidad(c => Math.min(maxCantidad, c + 1))} className="p-2.5 hover:bg-gray-100 rounded-full transition">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
@@ -259,7 +279,11 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
             {autenticado ? (
               <button onClick={handleAgregar} disabled={sinStock || agregando}
                 className="w-full bg-gray-900 hover:bg-rose-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 text-base uppercase tracking-wide flex items-center justify-center gap-2">
-                {getButtonContent()}
+                {agregando ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Agregando...</>
+                ) : sinStock ? 'Producto agotado' : (
+                  <><ShoppingBag className="w-5 h-5" /> Agregar al carrito</>
+                )}
               </button>
             ) : (
               <Link href="/login">
@@ -268,6 +292,7 @@ export default function DetalleProductoClient({ producto }: Readonly<{ producto:
                 </button>
               </Link>
             )}
+
             <Link href="/catalogo" className="block text-center text-sm text-gray-400 hover:text-rose-600 transition-colors font-medium">
               ← Seguir comprando
             </Link>

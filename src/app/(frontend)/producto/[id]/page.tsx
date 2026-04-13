@@ -6,12 +6,29 @@ import DetalleProductoClient from '@/components/productos/DetalleProductoclient'
 export default async function DetalleProductoPage({
   params,
 }: {
-  readonly params: Promise<{ id: string }>
+  params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const productoId = Number(id)
+
+  // Promoción activa asignada específicamente a este producto
+  const hoy = new Date()
+  const promoProducto = await prisma.promocionProducto.findFirst({
+    where: {
+      producto_id: productoId,
+      promocion: {
+        activo: true,
+        fecha_inicio: { lte: hoy },
+        fecha_fin:    { gte: hoy },
+      },
+    },
+    include: { promocion: { select: { descuento: true } } },
+    orderBy: { promocion: { descuento: 'desc' } },
+  })
+  const descuentoProducto = promoProducto ? Number(promoProducto.promocion.descuento) : 0
 
   const raw = await prisma.producto.findUnique({
-    where: { id: Number(id), activo: true },
+    where: { id: productoId, activo: true },
     include: {
       marca:     { select: { nombre: true } },
       categoria: { select: { nombre: true } },
@@ -24,18 +41,16 @@ export default async function DetalleProductoPage({
 
   if (!raw) return notFound()
 
-  // Normalizar imágenes del producto padre (JsonValue → string[])
   const imagenesPadre: string[] = Array.isArray(raw.imagen)
     ? (raw.imagen as string[]).filter((u): u is string => typeof u === 'string')
     : []
 
- 
   const producto = {
-    id:          raw.id,
-    nombre:      raw.nombre,
-    descripcion: raw.descripcion ?? null,
-    marca:       raw.marca   ?? null,
-    categoria:   raw.categoria ?? null,
+    id:           raw.id,
+    nombre:       raw.nombre,
+    descripcion:  raw.descripcion ?? null,
+    marca:        raw.marca       ?? null,
+    categoria:    raw.categoria   ?? null,
     imagenesPadre,
     variantes: raw.variantes.map(v => ({
       id:           v.id,
@@ -43,12 +58,11 @@ export default async function DetalleProductoPage({
       presentacion: v.presentacion ?? null,
       precio_venta: Number(v.precio_venta),
       stock:        v.stock,
-      // Imágenes propias de la variante (si tiene), si no se usan las del padre
       imagenes: Array.isArray(v.imagen)
         ? (v.imagen as string[]).filter((u): u is string => typeof u === 'string')
         : [],
     })),
   }
 
-  return <DetalleProductoClient producto={producto} />
+  return <DetalleProductoClient producto={producto} descuentoProducto={descuentoProducto} />
 }
