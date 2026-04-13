@@ -9,29 +9,22 @@ datasource db {
 }
 
 model Cita {
-  id                Int      @id @default(autoincrement())
+  id                Int          @id @default(autoincrement())
   usuario_id        Int?
   servicio_id       Int
-  empleado_id       Int?
   fecha             DateTime
   hora              String
-  estado            String   @default("PENDIENTE")
   notas             String?
-  createdAt         DateTime @default(now())
+  createdAt         DateTime     @default(now())
   metodo_pago       String?
   nombre_contacto   String?
   telefono_contacto String?
-
-  // Relaciones
-  servicio Servicio @relation(fields: [servicio_id], references: [id])
-
-  // Cliente que agenda la cita
-  usuario Usuario? @relation("CitaCliente", fields: [usuario_id], references: [id])
-
-  // Empleado que realiza el servicio de manicure
-  empleado Usuario? @relation("CitaEmpleado", fields: [empleado_id], references: [id])
-
-  avisos AvisoAdmin[]
+  empleado_id       Int?
+  estado            String       @default("PENDIENTE")
+  empleado          Usuario?     @relation("CitaEmpleado", fields: [empleado_id], references: [id])
+  servicio          Servicio     @relation(fields: [servicio_id], references: [id])
+  usuario           Usuario?     @relation("CitaCliente", fields: [usuario_id], references: [id])
+  avisos            AvisoAdmin[]
 
   @@map("tblcitas")
   @@schema("agenda")
@@ -46,8 +39,6 @@ model DiaBloqueado {
   @@map("tbldiasbloquedos")
   @@schema("agenda")
 }
-
-
 
 model HorarioDisponible {
   id        Int     @id @default(autoincrement())
@@ -119,6 +110,7 @@ model Producto {
   favoritos           Favorito[]
   categoria           Categoria? @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   marca               Marca?     @relation(fields: [marca_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  promociones         PromocionProducto[] 
   variantes           Variante[]
 
   @@map("tblproductos")
@@ -179,21 +171,47 @@ model Favorito {
 }
 
 model Servicio {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  descripcion String?
-  precio      Float
-  duracion    String
-  categoria   String
-  beneficios  String?
-  incluye     String?
-  imagen      String?
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime
-  citas       Cita[]
+  id           Int                @id @default(autoincrement())
+  nombre       String
+  descripcion  String?
+  precio       Float
+  duracion     String
+  imagen       String?
+  activo       Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime
+  beneficios   String?
+  incluye      String?
+  categoria_id Int?
+  categoria    CategoriaServicio? @relation(fields: [categoria_id], references: [id])
+  citas        Cita[]
+  favoritos FavoritoServicio[]
 
   @@map("tblservicios")
+  @@schema("catalogos")
+}
+
+model FavoritoServicio {
+  id          Int       @id @default(autoincrement())
+  usuario_id  Int
+  servicio_id Int
+  creado_en   DateTime? @default(now()) @db.Timestamp(6)
+  servicio    Servicio  @relation(fields: [servicio_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  usuario     Usuario   @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([usuario_id, servicio_id])
+  @@index([usuario_id])
+  @@map("tblfavoritos_servicios")
+  @@schema("ventas")
+}
+
+model CategoriaServicio {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique @db.VarChar(100)
+  activo    Boolean    @default(true)
+  servicios Servicio[]
+
+  @@map("tblcategorias_servicios")
   @@schema("catalogos")
 }
 
@@ -271,26 +289,28 @@ model TokenRecuperacion {
 model Usuario {
   id                Int                @id @default(autoincrement())
   nombre            String             @db.VarChar(150)
-  appaterno         String?            @db.VarChar(150)
-  apmaterno         String?            @db.VarChar(150)
   correo            String             @unique @db.VarChar(100)
   password          String             @db.VarChar(255)
   telefono          String?            @db.VarChar(20)
   rol               Rol                @default(CLIENTE)
   activo            Boolean            @default(true)
   intentos_fallidos Int                @default(0)
+  image             String?
   cuenta_bloqueada  Boolean            @default(false)
   fecha_registro    DateTime           @default(now()) @db.Timestamp(6)
-  
+  apmaterno         String?            @db.VarChar(150)
+  appaterno         String?            @db.VarChar(150)
+  diasAtencion      EmpleadoDia[]   
+  horaExcepciones EmpleadoHoraExcepcion[]    
   citasComoCliente  Cita[]             @relation("CitaCliente")
   citasComoEmpleado Cita[]             @relation("CitaEmpleado")
-  
   carrito           CarritoItem[]
   favoritos         Favorito[]
+  favoritosServicios FavoritoServicio[]
   avisos            AvisoAdmin[]
   permisos          PermisoUsuario[]
-  pedidos           Pedido[]
   tokenRecuperacion TokenRecuperacion?
+  pedidos           Pedido[]
 
   @@map("tblusuarios")
   @@schema("seguridad")
@@ -300,15 +320,42 @@ model Empleado {
   id          Int      @id @default(autoincrement())
   nombre      String   @db.VarChar(150)
   puesto      String   @db.VarChar(100)
-  descripcion String?  @db.Text
-  imagen      String? // URL de Cloudinary
-  orden       Int      @default(0) // Para ordenar en "Nosotros"
+  descripcion String?
+  imagen      String?
+  orden       Int      @default(0)
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  // ← quitar la línea "dias EmpleadoDia[]", ya no aplica
 
   @@map("tblempleados")
-  @@schema("catalogos") 
+  @@schema("catalogos")
+}
+
+model EmpleadoDia {
+  id          Int      @id @default(autoincrement())
+  usuario_id  Int                              // ← antes era empleado_id → Empleado
+  dia_semana  Int
+  usuario     Usuario  @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@unique([usuario_id, dia_semana])
+  @@map("tblempleado_dias")
+  @@schema("seguridad")                        // ← mover a seguridad junto con Usuario
+}
+
+model EmpleadoHoraExcepcion {
+  id          Int       @id @default(autoincrement())
+  usuario_id  Int
+  dia_semana  Int?      // null si es por fecha específica
+  fecha       DateTime? @db.Date  // null si es permanente
+  hora        String    @db.VarChar(5)
+  tipo        String    @db.VarChar(10)  // "QUITAR" | "AGREGAR"
+  usuario     Usuario   @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@unique([usuario_id, dia_semana, hora, tipo])
+  @@unique([usuario_id, fecha, hora, tipo])
+  @@map("tblempleado_hora_excepciones")
+  @@schema("seguridad")
 }
 
 model PermisoUsuario {
@@ -316,7 +363,6 @@ model PermisoUsuario {
   usuario_id Int
   permiso    String  @db.VarChar(100)
   activo     Boolean @default(false)
-
   usuario    Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
 
   @@unique([usuario_id, permiso])
@@ -358,6 +404,43 @@ model Pedido {
   @@schema("ventas")
 }
 
+model Promocion {
+  id           Int                @id @default(autoincrement())
+  nombre       String             @db.VarChar(150)
+  tipo         String             @db.VarChar(50)   // PRODUCTO | CODIGO
+  descuento    Decimal            @db.Decimal(5, 2)
+  codigo       String?            @unique @db.VarChar(50)
+  fecha_inicio DateTime           @db.Date
+  fecha_fin    DateTime           @db.Date
+  activo       Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  productos    PromocionProducto[]
+
+  @@map("tblpromociones")
+  @@schema("ventas")
+}
+
+model PromocionProducto {
+  id           Int       @id @default(autoincrement())
+  promocion_id Int
+  producto_id  Int
+  promocion    Promocion @relation(fields: [promocion_id], references: [id], onDelete: Cascade)
+  producto     Producto  @relation(fields: [producto_id], references: [id], onDelete: Cascade)
+
+  @@unique([promocion_id, producto_id])
+  @@map("tblpromociones_productos")
+  @@schema("ventas")
+}
+
+model ConfigSitio {
+  id    Int    @id @default(autoincrement())
+  clave String @unique @db.VarChar(100)
+  valor String
+
+  @@map("tblconfig_sitio")
+  @@schema("seguridad")
+}
+
 model Backup {
   id     Int       @id @default(autoincrement())
   nombre String    @db.VarChar(255)
@@ -368,17 +451,6 @@ model Backup {
 
   @@map("tblbackup")
   @@schema("seguridad")
-}
-
-
-model categorias_servicios {
-  id           Int        @id @default(autoincrement())
-  nombre       String     @unique @db.VarChar(100)
-  activo       Boolean    @default(true)
-  tblservicios Servicio[]
- 
-  @@map("tblcategorias_servicios")
-  @@schema("catalogos")
 }
 
 enum Rol {

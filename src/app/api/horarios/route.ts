@@ -1,92 +1,72 @@
-import { NextResponse } from "next/server"
+// src/app/api/horarios/route.ts
+// GET — devuelve horarios disponibles para una fecha
+// Si viene empleado_id, filtra solo días que ese empleado atiende
+
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const fechaStr   = searchParams.get("fecha")
-    const servicioId = searchParams.get("servicioId")
-    // 1. Agregado: Obtener empleadoId
-    const empleadoId = searchParams.get("empleadoId")
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const fecha      = searchParams.get("fecha")       // "2025-04-15"
+  const empleadoId = searchParams.get("empleadoId")  // opcional
 
-    if (!fechaStr) return NextResponse.json([])
+  if (!fecha) return NextResponse.json([], { status: 400 })
 
-    const [anio, mes, dia] = fechaStr.split("-").map(Number)
-    const fecha = new Date(anio, mes - 1, dia)
-    const jsDia = fecha.getDay()
-    const diaSemana = jsDia === 0 ? null : jsDia
+  const fechaDate  = new Date(fecha + "T00:00:00")
+  // getDay(): 0=Dom,1=Lun,...,6=Sáb → convertir a 1=Lun,...,6=Sáb
+  const diaSemanaJS = fechaDate.getDay()
+  const diaSemana   = diaSemanaJS === 0 ? 7 : diaSemanaJS // 7=Domingo (sin servicio)
 
-    if (diaSemana === null) return NextResponse.json([])
+  // Si hay empleado seleccionado, verificar que atiende ese día
+  if (empleadoId && empleadoId !== "null") {
+  const atiende = await prisma.empleadoDia.findUnique({
+  where: {
+    usuario_id_dia_semana: {
+      usuario_id: Number(empleadoId),
+      dia_semana: diaSemana,
+    },
+  },
+})
 
-    const horariosActivos = await prisma.horarioDisponible.findMany({
-      where: { diaSemana, activo: true },
-      orderBy: { hora: "asc" },
-    })
-
-    if (horariosActivos.length === 0) return NextResponse.json([])
-
-    const fechaInicio = new Date(fechaStr + "T00:00:00")
-    const fechaFin    = new Date(fechaStr + "T23:59:59")
-
-    // 2. Reemplazo del bloque de citasExistentes
-    let citasExistentes: { hora: string }[] = []
-
-    if (empleadoId && empleadoId !== "") {
-      // NOTA: Esto fallará si no has agregado 'empleado_id' a tu tabla 'tblcitas'
-      citasExistentes = await prisma.$queryRaw<{ hora: string }[]>`
-        SELECT hora FROM agenda.tblcitas
-        WHERE fecha >= ${fechaInicio}
-        AND fecha <= ${fechaFin}
-        AND estado::text IN ('PENDIENTE', 'CONFIRMADA')
-        AND empleado_id = ${Number(empleadoId)}
-      `
-    } else if (servicioId && servicioId !== "") {
-      citasExistentes = await prisma.$queryRaw<{ hora: string }[]>`
-        SELECT hora FROM agenda.tblcitas
-        WHERE fecha >= ${fechaInicio}
-        AND fecha <= ${fechaFin}
-        AND estado::text IN ('PENDIENTE', 'CONFIRMADA')
-        AND servicio_id = ${Number(servicioId)}
-      `
-    } else {
-      citasExistentes = await prisma.$queryRaw<{ hora: string }[]>`
-        SELECT hora FROM agenda.tblcitas
-        WHERE fecha >= ${fechaInicio}
-        AND fecha <= ${fechaFin}
-        AND estado::text IN ('PENDIENTE', 'CONFIRMADA')
-      `
+    // El empleado no atiende ese día → devolver vacío con mensaje
+    if (!atiende) {
+      return NextResponse.json({ sinAtencion: true, horarios: [] })
     }
-
-    const horasBloqueadas = await prisma.horaBloqueada.findMany({
-      where: { fecha: { gte: fechaInicio, lte: fechaFin } },
-      select: { hora: true },
-    })
-
-    const horasOcupadas = new Set(citasExistentes.map(c => c.hora))
-    const horasBloq     = new Set(horasBloqueadas.map(h => h.hora))
-
-    const ahora    = new Date()
-    const ahoraStr = ahora.toLocaleDateString("en-CA")
-    const esHoy    = fechaStr === ahoraStr
-
-    const resultado = horariosActivos.map(h => {
-      let horaYaPaso = false
-      if (esHoy) {
-        const [horaH, minH] = h.hora.split(":").map(Number)
-        horaYaPaso = horaH < ahora.getHours() ||
-          (horaH === ahora.getHours() && minH <= ahora.getMinutes())
-      }
-      return {
-        id:         h.id,
-        hora:       h.hora,
-        disponible: !horasOcupadas.has(h.hora) && !horasBloq.has(h.hora) && !horaYaPaso,
-      }
-    })
-
-    return NextResponse.json(resultado)
-
-  } catch (error) {
-    console.error("❌ Error en horarios:", error)
-    return NextResponse.json([])
   }
+
+  // Obtener horas bloqueadas para esa fecha
+  const [horasBloqueadas, citasDelDia, horarioExcepcion] = await Promise.all([
+    prisma.horaBloqueada.findMany({ where: { fecha: fechaDate } }),
+    prisma.cita.findMany({
+      where: {
+        fecha: fechaDate,
+        estado: { notIn: ["CANCELADO"] },
+        ...(empleadoId && empleadoId !== "null"
+          ? { empleado_id: Number(empleadoId) }
+          : {}),
+      },
+      select: { hora: true },
+    }),
+    prisma.horarioExcepcion.findMany({ where: { fecha: fechaDate } }),
+  ])
+
+  const horasOcupadas = new Set([
+    ...horasBloqueadas.map(h => h.hora),
+    ...citasDelDia.map(c => c.hora),
+    ...horarioExcepcion.map(h => h.hora),
+  ])
+
+  // Obtener horarios del día
+  const horariosBase = await prisma.horarioDisponible.findMany({
+    where: { diaSemana: diaSemana, activo: true },
+    orderBy: { hora: "asc" },
+  })
+
+  const horarios = horariosBase.map(h => ({
+    id:         h.id,
+    hora:       h.hora,
+    disponible: !horasOcupadas.has(h.hora),
+  }))
+
+  return NextResponse.json({ sinAtencion: false, horarios })
 }

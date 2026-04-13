@@ -19,21 +19,26 @@ function getImagen(imagen: unknown): string | null {
   return null
 }
 
-export default function ProductoCard({ producto }: { producto: ProductoCardType }) {
+interface Props {
+  producto: ProductoCardType
+  descuentoProducto?: number
+  precioConDescuento?: (precio: number) => number | null
+}
+
+export default function ProductoCard({ producto, descuentoProducto = 0, precioConDescuento }: Props) {
   const foto = getImagen(producto.imagen)
   const sinStock = !producto.en_stock
-
-  // Si tiene variantes con tonos distintos, mostramos chips de color
   const tonos = [...new Set(producto.variantes.map(v => v.tono).filter(Boolean))] as string[]
   const tieneVariantes = producto.variantes.length > 1
 
+  const precioOriginal = producto.precio_min
+  const precioFinal = precioConDescuento ? precioConDescuento(precioOriginal) : null
+  const tieneDescuento = !!precioFinal && precioFinal < precioOriginal
+
   return (
-    <article
-      className={`group bg-white rounded-[2rem] shadow-sm hover:shadow-2xl border border-rose-50 overflow-hidden transition-all duration-500 hover:-translate-y-2 ${
-        sinStock ? 'opacity-60' : ''
-      }`}
-    >
+    <article className={`group bg-white rounded-[2rem] shadow-sm hover:shadow-2xl border border-rose-50 overflow-hidden transition-all duration-500 hover:-translate-y-2 ${sinStock ? 'opacity-60' : ''}`}>
       <Link href={`/producto/${producto.id}`} className="block">
+
         {/* Imagen */}
         <div className="relative h-60 overflow-hidden bg-rose-50">
           {foto ? (
@@ -50,8 +55,15 @@ export default function ProductoCard({ producto }: { producto: ProductoCardType 
             </div>
           )}
 
-          {/* Badge variantes */}
-          {tieneVariantes && (
+          {/* Badge descuento — esquina superior izquierda */}
+          {tieneDescuento && (
+            <span className="absolute top-3 left-3 bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-lg">
+              -{descuentoProducto}%
+            </span>
+          )}
+
+          {/* Badge variantes — solo si no hay descuento */}
+          {tieneVariantes && !tieneDescuento && (
             <span className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
               {producto.variantes.length} variantes
             </span>
@@ -92,7 +104,6 @@ export default function ProductoCard({ producto }: { producto: ProductoCardType 
             {producto.nombre}
           </h3>
 
-          {/* Chips de tonos (máx 5 + "más") */}
           {tonos.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {tonos.slice(0, 5).map(tono => (
@@ -107,14 +118,37 @@ export default function ProductoCard({ producto }: { producto: ProductoCardType 
           )}
 
           {/* Precio */}
-          <div className="flex items-baseline gap-1">
-            {tieneVariantes && (
-              <span className="text-xs text-gray-400 font-medium">desde</span>
+          <div className="flex items-end gap-2 flex-wrap">
+            {tieneDescuento ? (
+              <>
+                <div className="flex flex-col">
+                  {tieneVariantes && (
+                    <span className="text-[10px] text-gray-400 font-medium">desde</span>
+                  )}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-gray-900">
+                      ${precioFinal!.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">MXN</span>
+                  </div>
+                  <span className="text-xs text-gray-400 line-through">
+                    ${precioOriginal.toLocaleString('es-MX')} MXN
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col">
+                {tieneVariantes && (
+                  <span className="text-xs text-gray-400 font-medium">desde</span>
+                )}
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-900">
+                    ${precioOriginal.toLocaleString('es-MX')}
+                  </span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">MXN</span>
+                </div>
+              </div>
             )}
-            <span className="text-2xl font-black text-gray-900">
-              ${producto.precio_min.toLocaleString('es-MX')}
-            </span>
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">MXN</span>
           </div>
         </div>
       </Link>

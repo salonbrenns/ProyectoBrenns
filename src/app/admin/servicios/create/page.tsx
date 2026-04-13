@@ -1,14 +1,21 @@
-// src/app/admin/servicios/create/page.tsx
-import { Metadata } from 'next'
-import ServicioForm from '@/components/servicios/form'
-
-export const metadata: Metadata = { title: 'Nuevo Servicio' }
-
-export default function CreateServicioPage() {
+import CreateServicioForm from '@/components/servicios/create-form'
+import { prisma }         from '@/lib/prisma'
+import { Metadata }       from 'next'
+ 
+export const metadata: Metadata = {
+  title: 'Crear Servicio',
+}
+ 
+export default async function Page() {
+  const categorias = await prisma.categoriaServicio.findMany({
+    where:   { activo: true },
+    select:  { id: true, nombre: true },
+    orderBy: { nombre: 'asc' },
+  })
+ 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-pink-900">Nuevo Servicio</h1>
-      <ServicioForm />
-    </div>
+    <main className="p-6">
+      <CreateServicioForm categorias={categorias} />
+    </main>
   )
 }

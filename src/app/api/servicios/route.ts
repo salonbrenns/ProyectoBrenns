@@ -7,25 +7,30 @@ export async function GET() {
     const servicios = await prisma.servicio.findMany({
       where: { activo: true },
       select: {
-        id:        true,
-        nombre:    true,
-        precio:    true,
-        categoria: true,
-        imagen:    true,
-        duracion:  true,
+        id:       true,
+        nombre:   true,
+        precio:   true,
+        imagen:   true,
+        duracion: true,
+        activo:   true,
+        categoria: { select: { nombre: true } },  // CategoriaServicio relation
       },
       orderBy: { nombre: "asc" },
     })
 
     return NextResponse.json({
       servicios: servicios.map(s => ({
-        ...s,
-        precio: Number(s.precio),
+        id:         s.id,
+        nombre:     s.nombre,
+        imagen:     s.imagen,
+        duracion:   s.duracion,
+        precio_min: Number(s.precio),
+        disponible: s.activo,
+        categoria:  s.categoria?.nombre ?? 'Sin categoría',
       }))
     })
-  } catch { 
-    // Al quitar (_err), TypeScript entiende que el error se captura 
-    // pero no se necesita instanciar ninguna variable.
+  } catch (err) {
+    console.error(err)
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }

@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+
+// ✅ Tipo para el body del POST en lugar de any
+type ConfigBody = Record<string, string | number | boolean | object | null>
+
+export async function GET() {
+  try {
+    const registros = await prisma.configSitio.findMany()
+    const config: Record<string, unknown> = {}
+
+    for (const r of registros) {
+      try {
+        if (r.valor.startsWith('{') || r.valor.startsWith('[')) {
+          config[r.clave] = JSON.parse(r.valor)
+        } else {
+          config[r.clave] = r.valor
+        }
+      } catch {
+        config[r.clave] = r.valor
+      }
+    }
+
+    return NextResponse.json(config)
+  } catch { // ✅ eliminada variable 'error' no usada
+    return NextResponse.json({}, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json() as ConfigBody // ✅ tipo explícito
+
+    await prisma.$transaction(
+      Object.entries(body).map(([clave, valor]) => {
+        const valorStr = (typeof valor === "object" && valor !== null)
+          ? JSON.stringify(valor)
+          : String(valor)
+
+        return prisma.configSitio.upsert({
+          where:  { clave },
+          update: { valor: valorStr },
+          create: { clave, valor: valorStr },
+        })
+      })
+    )
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error("Error al guardar config:", err)
+    return NextResponse.json({ error: "Error al guardar" }, { status: 500 })
+  }
+}

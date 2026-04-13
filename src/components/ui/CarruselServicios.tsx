@@ -10,11 +10,12 @@ type Servicio = {
   precio: number
   duracion: string
   imagen: string | null
-  categoria: string
+  categoria: { id: number; nombre: string; activo: boolean } | null
 }
 
-const esLocal = (img: string | null | undefined): img is string =>
-  !!img && !img.startsWith("http")
+// Acepta cualquier URL válida — local (/...) o externa (https://...)
+const tieneImagen = (img: string | null | undefined): img is string =>
+  !!img && img.length > 0
 
 export default function CarruselServicios({ servicios }: { servicios: Servicio[] }) {
   const [idx, setIdx] = useState(0)
@@ -24,10 +25,8 @@ export default function CarruselServicios({ servicios }: { servicios: Servicio[]
   const prev = () => setIdx(i => (i - 1 + total) % total)
   const next = () => setIdx(i => (i + 1) % total)
 
-
-
-  const handlePrev = () => { prev()}
-  const handleNext = () => { next(); }
+  const handlePrev = () => { prev() }
+  const handleNext = () => { next() }
 
   const slice = servicios.slice(idx * porPagina, idx * porPagina + porPagina)
 
@@ -60,8 +59,14 @@ export default function CarruselServicios({ servicios }: { servicios: Servicio[]
             <Link key={s.id} href={`/servicio/${s.id}`}
               className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-pink-200 hover:shadow-lg transition-all">
               <div className="relative h-48 overflow-hidden">
-                {esLocal(s.imagen) ? (
-                  <Image src={s.imagen} alt={s.nombre} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                {tieneImagen(s.imagen) ? (
+                  <Image
+                    src={s.imagen}
+                    alt={s.nombre}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 ) : (
                   <div className="h-full w-full bg-gradient-to-br from-pink-50 to-rose-50 flex items-center justify-center">
                     <Scissors className="w-10 h-10 text-pink-200" />
@@ -69,7 +74,9 @@ export default function CarruselServicios({ servicios }: { servicios: Servicio[]
                 )}
               </div>
               <div className="p-5">
-                <span className="text-xs font-semibold text-pink-500 uppercase tracking-wide">{s.categoria}</span>
+                <span className="text-xs font-semibold text-pink-500 uppercase tracking-wide">
+                  {s.categoria?.nombre || 'Categoría no disponible'}
+                </span>
                 <h3 className="font-bold text-gray-900 mt-1 mb-3">{s.nombre}</h3>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-pink-600">${s.precio.toLocaleString()} MXN</span>
@@ -83,12 +90,14 @@ export default function CarruselServicios({ servicios }: { servicios: Servicio[]
         </div>
 
         {/* Dots */}
-        <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: total }).map((_, i) => (
-            <button key={i} onClick={() => { setIdx(i); }}
-              className={`h-2 rounded-full transition-all ${i === idx ? "bg-pink-600 w-6" : "bg-gray-300 w-2"}`} />
-          ))}
-        </div>
+        {total > 1 && (
+          <div className="flex justify-center gap-2 mt-8">
+            {Array.from({ length: total }).map((_, i) => (
+              <button key={i} onClick={() => { setIdx(i) }}
+                className={`h-2 rounded-full transition-all ${i === idx ? "bg-pink-600 w-6" : "bg-gray-300 w-2"}`} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

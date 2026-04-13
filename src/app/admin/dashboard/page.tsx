@@ -138,15 +138,15 @@ export default function DashboardPage() {
     cargarUsuarios()
   }, [])
 
-  const handleCambiarRol = async (id: number, nuevoRol: string) => {
+  const handleCambiarRol = async (id: number, nuevoRolVal: string) => {
     setCambiandoRol(id)
     try {
       const res = await fetch("/api/admin/usuarios", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, rol: nuevoRol }),
+        body: JSON.stringify({ id, rol: nuevoRolVal }),
       })
-      if (res.ok) setUsuarios(prev => prev.map(u => u.id === id ? { ...u, rol: nuevoRol } : u))
+      if (res.ok) setUsuarios(prev => prev.map(u => u.id === id ? { ...u, rol: nuevoRolVal } : u))
     } finally {
       setCambiandoRol(null)
     }
@@ -191,23 +191,23 @@ export default function DashboardPage() {
     }
   }
 
- const handleVerPermisos = async (u: Usuario) => {
-  setUsuarioPermisos(u)
-  setShowPermisos(true)
-  setLoadingPermisos(true)
-  try {
-    const res = await fetch(`/api/admin/permisos?usuario_id=${u.id}`)
-    if (!res.ok) { setPermisos([]); return }
-    const text = await res.text()
-    if (!text) { setPermisos([]); return }
-    const data = JSON.parse(text)
-    setPermisos(Array.isArray(data) ? data : [])
-  } catch {
-    setPermisos([])
-  } finally {
-    setLoadingPermisos(false)
+  const handleVerPermisos = async (u: Usuario) => {
+    setUsuarioPermisos(u)
+    setShowPermisos(true)
+    setLoadingPermisos(true)
+    try {
+      const res = await fetch(`/api/admin/permisos?usuario_id=${u.id}`)
+      if (!res.ok) { setPermisos([]); return }
+      const text = await res.text()
+      if (!text) { setPermisos([]); return }
+      const data = JSON.parse(text)
+      setPermisos(Array.isArray(data) ? data : [])
+    } catch {
+      setPermisos([])
+    } finally {
+      setLoadingPermisos(false)
+    }
   }
-}
 
   const handleTogglePermiso = async (key: string, activo: boolean) => {
     if (!usuarioPermisos) return
@@ -297,19 +297,17 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Resumen por rol */}
-      <div className="grid grid-cols-3 gap-3">
-        {Object.entries(ROL_CONFIG)
-          .filter(([rol]) => rol !== "CLIENTE")
-          .map(([rol, cfg]) => (
-            <div key={rol} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${cfg.color}`}>{cfg.icon}</div>
-              <div>
-                <p className="text-xs text-gray-500">{cfg.label}s</p>
-                <p className="text-2xl font-bold text-gray-800">{contarPorRol(rol)}</p>
-              </div>
+      {/* ✅ Resumen por rol — ahora incluye CLIENTE */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Object.entries(ROL_CONFIG).map(([rol, cfg]) => (
+          <div key={rol} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${cfg.color}`}>{cfg.icon}</div>
+            <div>
+              <p className="text-xs text-gray-500">{cfg.label}s</p>
+              <p className="text-2xl font-bold text-gray-800">{contarPorRol(rol)}</p>
             </div>
-          ))}
+          </div>
+        ))}
       </div>
 
       {/* Tabla usuarios */}
@@ -319,8 +317,9 @@ export default function DashboardPage() {
             <Users className="w-5 h-5 text-pink-500" /> Usuarios del sistema
           </h2>
           <div className="flex items-center gap-3 flex-wrap">
+            {/* ✅ Filtros — ahora incluye CLIENTE */}
             <div className="flex gap-2 flex-wrap">
-              {["TODOS", "ADMIN", "DOCENTE", "EMPLEADO"].map(rol => (
+              {["TODOS", "ADMIN", "DOCENTE", "EMPLEADO", "CLIENTE"].map(rol => (
                 <button key={rol} onClick={() => setFiltroRol(rol)}
                   className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                     filtroRol === rol ? "bg-pink-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -375,14 +374,13 @@ export default function DashboardPage() {
                       <td className="px-5 py-4 text-sm text-gray-600">{u.telefono || "—"}</td>
                       <td className="px-5 py-4">
                         <div className="relative inline-block">
+                          {/* ✅ Selector de rol — ahora incluye CLIENTE */}
                           <select value={u.rol} disabled={cambiandoRol === u.id}
                             onChange={e => handleCambiarRol(u.id, e.target.value)}
                             className={`text-xs font-semibold px-2 py-1 rounded-full border-0 cursor-pointer appearance-none pr-6 ${cfg?.color} disabled:opacity-50`}>
-                            {Object.entries(ROL_CONFIG)
-                              .filter(([r]) => r !== "CLIENTE")
-                              .map(([rol, c]) => (
-                                <option key={rol} value={rol}>{c.label}</option>
-                              ))}
+                            {Object.entries(ROL_CONFIG).map(([rol, c]) => (
+                              <option key={rol} value={rol}>{c.label}</option>
+                            ))}
                           </select>
                           <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
                         </div>
@@ -417,7 +415,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── Modal Permisos ── */}
+      {/* Modal Permisos */}
       {showPermisos && usuarioPermisos && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -524,7 +522,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Modal nuevo usuario ── */}
+      {/* Modal nuevo usuario */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -569,13 +567,12 @@ export default function DashboardPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Rol</label>
+                {/* ✅ Selector en modal — ahora incluye CLIENTE */}
                 <select value={nuevoRol} onChange={e => setNuevoRol(e.target.value)}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all text-sm">
-                  {Object.entries(ROL_CONFIG)
-                    .filter(([rol]) => rol !== "CLIENTE")
-                    .map(([rol, cfg]) => (
-                      <option key={rol} value={rol}>{cfg.label}</option>
-                    ))}
+                  {Object.entries(ROL_CONFIG).map(([rol, cfg]) => (
+                    <option key={rol} value={rol}>{cfg.label}</option>
+                  ))}
                 </select>
               </div>
               {errorModal && (

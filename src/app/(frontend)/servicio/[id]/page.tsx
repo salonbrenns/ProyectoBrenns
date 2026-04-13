@@ -1,25 +1,12 @@
 // src/app/(frontend)/servicio/[id]/page.tsx
 import Image from "next/image"
 import Link from "next/link"
-import { Clock, Heart, ArrowLeft, Star } from "lucide-react"
+import { ArrowLeft, Clock, Layers } from "lucide-react"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import BotonAccion from "@/components/ui/BotonAccion"
 import DetalleTabs from "@/components/ui/DetalleTabs"
-
-type Servicio = {
-  id: number
-  nombre: string
-  descripcion: string | null
-  precio: number
-  duracion: string
-  categoria: string
-  imagen: string | null
-  activo: boolean
-  // ← Nuevos campos agregados
-  beneficios: string | null
-  incluye: string | null
-}
+import {FavoritoServicioBoton}from "@/components/ui/FavoritoServicioBoton"
 
 export default async function DetalleServicio({
   params,
@@ -30,94 +17,90 @@ export default async function DetalleServicio({
 
   const servicio = await prisma.servicio.findUnique({
     where: { id: Number(id), activo: true },
-  })as Servicio | null;
+    include: { categoria: { select: { nombre: true } } },
+  }) as {
+    id: number; nombre: string; descripcion: string | null
+    precio: number; duracion: string; activo: boolean
+    categoria: { nombre: string } | null
+    imagen: string | null; beneficios: string | null; incluye: string | null
+  } | null
 
   if (!servicio) return notFound()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50">
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        
-        <Link 
-          href="/servicios" 
-          className="inline-flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium mb-10 group"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
-          Volver a todos los servicios
+    <div className="min-h-screen bg-[#fffafa]">
+      <div className="max-w-7xl mx-auto px-6 pt-8">
+        <Link href="/servicios"
+          className="inline-flex items-center gap-2 text-pink-600 hover:text-pink-800 font-semibold text-sm transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Volver a todos los servicios
         </Link>
+      </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
-          
-          {/* Imagen */}
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-square lg:aspect-auto lg:min-h-[560px] bg-pink-100">
-            {servicio.imagen ? (
-              <Image 
-                src={servicio.imagen} 
-                alt={servicio.nombre} 
-                fill 
-                className="object-cover" 
-                priority 
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-9xl bg-pink-50">✨</div>
-            )}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
 
-            <button className="absolute top-6 right-6 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl hover:bg-white transition hover:scale-110">
-              <Heart className="w-7 h-7 text-pink-600" />
-            </button>
+          {/* Imagen sticky */}
+          <div className="lg:sticky lg:top-8">
+            <div className="relative rounded-3xl overflow-hidden bg-pink-50 shadow-xl aspect-square">
+              {servicio.imagen ? (
+                <Image src={servicio.imagen} alt={servicio.nombre} fill
+                  sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-9xl">✨</div>
+              )}
+              <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-1.5 rounded-full font-bold shadow-sm text-xs border border-pink-100">
+                <Clock className="w-3.5 h-3.5 text-pink-600" />
+                {servicio.duracion}
+              </div>
+
+              {/* Corazón — esquina superior derecha sobre la imagen */}
+              <div className="absolute top-4 right-4">
+                <FavoritoServicioBoton
+                  servicioId={servicio.id}
+                  className="bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Información */}
-          <div className="flex flex-col">
-            <div>
-              <span className="inline-block bg-pink-100 text-pink-700 px-5 py-2 rounded-full text-sm font-bold tracking-wide">
-                {servicio.categoria}
-              </span>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mt-4 leading-tight">
-                {servicio.nombre}
-              </h1>
+          {/* Info */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 flex-wrap">
+              {servicio.categoria && (
+                <span className="inline-flex items-center gap-1.5 bg-pink-100 text-pink-700 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">
+                  <Layers className="w-3 h-3" /> {servicio.categoria.nombre}
+                </span>
+              )}
             </div>
 
-            <div className="flex items-center gap-6 mt-6 text-gray-600">
-              <div className="flex items-center gap-2">
-                <Clock className="w-6 h-6 text-pink-600" />
-                <span className="font-medium text-lg">{servicio.duracion}</span>
-              </div>
-              <div className="flex text-amber-500">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-current" />
-                ))}
-              </div>
-            </div>
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 leading-tight">
+              {servicio.nombre}
+            </h1>
 
-            {/* Precio */}
-            <div className="mt-8">
-              <p className="text-sm text-gray-500 mb-1">Precio del servicio</p>
-              <p className="text-5xl font-black text-pink-600">
-                ${Number(servicio.precio).toLocaleString()}
-                <span className="text-2xl font-normal text-gray-500"> MXN</span>
+            <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl p-6 border border-pink-100">
+              <p className="text-4xl font-black text-gray-900">
+                ${Number(servicio.precio).toLocaleString('es-MX')}
+                <span className="text-lg font-semibold text-gray-400 ml-2">MXN</span>
               </p>
             </div>
 
-            {/* Pestañas Dinámicas */}
-            <div className="mt-10 flex-1">
-              <DetalleTabs 
-                descripcion={servicio.descripcion || ""} 
-                beneficios={servicio.beneficios || ""} 
-                incluye={servicio.incluye || ""} 
-              />
-            </div>
+            <DetalleTabs
+              descripcion={servicio.descripcion || ""}
+              beneficios={servicio.beneficios   || ""}
+              incluye={servicio.incluye         || ""}
+            />
 
-            {/* Botón Agendar */}
-            <div className="mt-12">
-              <BotonAccion
-                tipo="agendar"
-                href={`/agendar?servicioId=${servicio.id}`}
-                textoLogueado="Agendar Cita Ahora"
-                textoNoLogueado="Inicia sesión para agendar"
-                //className="w-full py-4 text-lg font-bold rounded-2xl"
-              />
-            </div>
+            <BotonAccion
+              tipo="agendar"
+              href={`/agendar?servicioId=${servicio.id}`}
+              textoLogueado="Agendar Cita Ahora"
+              textoNoLogueado="Inicia sesión para agendar"
+            />
+
+            <Link href="/servicios"
+              className="block text-center text-sm text-gray-400 hover:text-pink-600 transition-colors font-medium">
+              ← Ver todos los servicios
+            </Link>
           </div>
         </div>
       </div>

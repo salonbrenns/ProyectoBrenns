@@ -1,248 +1,50 @@
-// src/app/curso/[id]/page.tsx
-import Image from "next/image"
-import Link from "next/link"
-import { Calendar, Clock, User, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react"
+// src/app/(frontend)/cursos/[id]/page.tsx
+import { notFound } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import { auth } from "@/lib/auth"
+import CursoDetalleClient from './CursoDetalle'
 
-const cursosData = {
-  "1": {
-    id: 1,
-    titulo: "Acrílico Escultural: Nivel Intermedio",
-    instructora: "Brenda García",
-    imagen: "/cursos/curso-aclirico.jpg",
-    nivel: "Intermedio",
-    duracion: "4 Semanas",
-    precio: 2500,
-    cuposDisponibles: 3,
-    cuposTotales: 10,
-    fecha: "Próximo 19 de Octubre",
-    horario: "Domingo • 10:00 AM",
-    pagoUnico: true,
-    descripcion: `Este curso de Acrílico Escultural Intermedio está diseñado para perfeccionar tu técnica y explorar las formas más solicitadas en el mercado actual.\n\nAprenderás a construir uñas con estructuras avanzadas, aplicando el acrílico de manera precisa para lograr un acabado impecable y duradero.\n\nConviértete en una experta en escultura y ofrece a tus clientas diseños únicos y de alta calidad que te distinguirán.\n\n¡Es hora de dejar volar tu creatividad y dominar el arte del acrílico!`,
-    temario: [
-      "Módulo 1: Preparación Avanzada y Adherencia",
-      "Anatomía de la uña (repaso)",
-      "Técnicas de preparación para una adherencia superior en escultura",
-      "Uso correcto de primers y deshidratadores",
-    ],
-  },
-  "2": {
-    id: 2,
-    titulo: "Gelish Artist: Nivel Avanzado",
-    instructora: "Brenda García",
-    imagen: "/cursos/curso-gelish.jpg",
-    nivel: "Avanzado",
-    duracion: "3 Semanas",
-    precio: 3200,
-    cuposDisponibles: 5,
-    cuposTotales: 12,
-    fecha: "Próximo 26 de Octubre",
-    horario: "Sábado • 4:00 PM",
-    pagoUnico: false,
-    descripcion: `Domina las técnicas más vanguardistas de diseño con Gelish. Este nivel avanzado te llevará a crear efectos 3D, degradados perfectos y el uso profesional de pigmentos, foils y accesorios. Ideal para profesionales que buscan destacarse en el arte de las uñas de gel.`,
-    temario: [
-      "Técnicas de aplicación y sellado avanzado",
-      "Diseño en relieve 3D y 4D con geles",
-      "Manejo de pigmentos camaleón y espejos",
-      "Creación de efectos mármol y ojo de gato",
-    ],
-  },
-  "3": {
-    id: 3,
-    titulo: "Manicure Clásica Semipermanente",
-    instructora: "Brenda García",
-    imagen: "/cursos/curso-nail.jpg",
-    nivel: "Principiante",
-    duracion: "1 Día",
-    precio: 380,
-    cuposDisponibles: 15,
-    cuposTotales: 20,
-    fecha: "Próximo 1 de Noviembre",
-    horario: "Viernes • 9:00 AM",
-    pagoUnico: true,
-    descripcion: `Inicia tu camino en el mundo de la manicura profesional. Aprenderás desde la correcta esterilización, la preparación de la uña natural, hasta la aplicación perfecta del esmalte semipermanente con una durabilidad impecable. Curso esencial para cualquier manicurista.`,
-    temario: [
-      "Higiene y Bioseguridad en el salón",
-      "Anatomía de la mano y la uña",
-      "Técnica de retirado seguro y correcto",
-      "Aplicación de color y Top Coat de larga duración",
-    ],
-  },
-}
-
-export default async function CursoDetallePage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export default async function DetalleCursoPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const curso = cursosData[id as keyof typeof cursosData]
+  const cursoId = Number(id)
+  const session = await auth()
 
-  if (!curso) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-pink-600 mb-6">Curso no encontrado</h1>
-          <Link href="/cursos" className="text-pink-600 hover:underline text-lg inline-flex items-center gap-2">
-            <ArrowLeft className="w-5 h-5" />
-            Volver a cursos
-          </Link>
-        </div>
-      </div>
-    )
+  const raw = await prisma.curso.findUnique({
+    where: { 
+      id: cursoId, 
+      activo: true 
+    },
+    
+  })
+
+  if (!raw) return notFound()
+
+  // Mapeo de datos para el cliente
+  const curso = {
+    id: raw.id,
+    titulo: raw.titulo,
+    descripcion: raw.descripcion ?? null,
+    precio_total: Number(raw.precio_total),
+    nivel: raw.nivel ?? null,
+    duracion_horas: raw.duracion_horas ?? null,
+    cupo_maximo: raw.cupo_maximo,
+    inscritos: raw.inscritos,
+    fecha_inicio: raw.fecha_inicio?.toISOString() ?? null,
+    fecha_fin: raw.fecha_fin?.toISOString() ?? null,
+    imagenes: Array.isArray(raw.imagenes) 
+      ? (raw.imagenes as string[]) 
+      : [],
+   
   }
 
-  const cuposPorcentaje = (curso.cuposDisponibles / curso.cuposTotales) * 100
-
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-50 py-16">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Botón volver */}
-        <Link href="/cursos" className="inline-flex items-center gap-2 text-pink-600 hover:text-pink-700 font-medium mb-8">
-          <ArrowLeft className="w-5 h-5" />
-          Volver a cursos
-        </Link>
-
-        {/* Título + Instructora */}
-        <header className="text-center mb-12">
-          <h1 className="text-5xl md:text-6xl font-bold text-pink-600 leading-tight">
-            {curso.titulo}
-          </h1>
-          <p className="text-xl text-gray-700 mt-4 flex items-center justify-center gap-3">
-            <User className="w-6 h-6 text-pink-600" />
-            Impartido por: <span className="font-bold text-pink-600">{curso.instructora}</span>
-          </p>
-        </header>
-
-        <div className="grid lg:grid-cols-3 gap-10">
-          {/* Columna principal */}
-          <div className="lg:col-span-2 space-y-10">
-     {/* Imagen - tamaño intermedio */}
-<div className="relative rounded-3xl overflow-hidden shadow-2xl h-150">  {/* Cambiado a h-72 */}
-  <Image
-    src={curso.imagen}
-    alt={`Imagen del curso ${curso.titulo}`}
-    fill
-    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-    className="object-cover"
-    priority
-  />
-</div>
-
-            {/* Información General */}
-            <section className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100">
-              <h2 className="text-2xl font-bold text-pink-600 mb-6 flex items-center gap-3">
-                <Calendar className="w-7 h-7" />
-                Información General
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6 text-gray-700">
-                <div className="flex items-center gap-4">
-                  <Calendar className="w-6 h-6 text-pink-600" />
-                  <div>
-                    <p className="font-semibold">Próxima fecha</p>
-                    <p>{curso.fecha}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Clock className="w-6 h-6 text-pink-600" />
-                  <div>
-                    <p className="font-semibold">Duración</p>
-                    <p>{curso.duracion}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Clock className="w-6 h-6 text-pink-600" />
-                  <div>
-                    <p className="font-semibold">Horario</p>
-                    <p>{curso.horario}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <CheckCircle className="w-6 h-6 text-pink-600" />
-                  <div>
-                    <p className="font-semibold">Nivel</p>
-                    <p>{curso.nivel}</p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Descripción */}
-            <section className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100">
-              <h2 className="text-2xl font-bold text-pink-600 mb-6">Descripción del curso</h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {curso.descripcion}
-              </p>
-            </section>
-
-            {/* Temario */}
-            <section className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100">
-              <h2 className="text-2xl font-bold text-pink-600 mb-6">Temario</h2>
-              <ul className="space-y-4">
-                {curso.temario.map((tema, i) => (
-                  <li key={i} className="flex items-start gap-4">
-                    <CheckCircle className="w-6 h-6 text-pink-600 flex-shrink-0 mt-1" />
-                    <span className="text-gray-700 text-lg">{tema}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Instructora */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100 text-center">
-              <div className="bg-gray-200 border-2 border-dashed rounded-full w-32 h-32 mx-auto mb-6" />
-              <h3 className="text-2xl font-bold text-gray-900">{curso.instructora}</h3>
-              <p className="text-pink-600 font-semibold">Instructora certificada Brenn&apos;s</p>
-            </div>
-          </div>
-
-          {/* Sidebar derecho - Precio y acción */}
-          <aside className="lg:col-span-1">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 border border-pink-100 sticky top-24">
-              <div className="text-center mb-8">
-                <p className="text-5xl font-bold text-pink-600">
-                  ${curso.precio.toLocaleString()} <span className="text-2xl">MXN</span>
-                </p>
-                <p className="text-gray-600 mt-2">
-                  {curso.pagoUnico ? "Pago único" : "Anticipo disponible"}
-                </p>
-              </div>
-
-              {/* Cupos disponibles */}
-              <div className="mb-8">
-                <div className="flex justify-between text-lg font-bold mb-3">
-                  <span>Cupos disponibles</span>
-                  <span className={curso.cuposDisponibles <= 3 ? "text-red-600" : "text-pink-600"}>
-                    {curso.cuposDisponibles} de {curso.cuposTotales}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-700 ${curso.cuposDisponibles <= 3 ? "bg-red-500" : "bg-pink-600"}`}
-                    style={{ width: `${cuposPorcentaje}%` }}
-                  />
-                </div>
-                {curso.cuposDisponibles <= 3 && (
-                  <p className="text-red-600 font-bold mt-3 flex items-center justify-center gap-2 animate-pulse">
-                    <AlertCircle className="w-5 h-5" />
-                    ¡Últimos {curso.cuposDisponibles} cupos disponibles!
-                  </p>
-                )}
-              </div>
-
-              {/* Botón principal */}
-              <Link href="/inscribirse">
-                <button className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold text-xl py-5 rounded-full shadow-xl transition transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-pink-300">
-                  Inscribirme Ahora
-                </button>
-              </Link>
-
-              <p className="text-center text-gray-600 text-sm mt-6">
-                ¡No dejes pasar tu lugar! Cupos limitados
-              </p>
-            </div>
-          </aside>
-        </div>
-      </div>
-    </main>
+    <CursoDetalleClient 
+      curso={curso} 
+      isLoggedIn={!!session} 
+    />
   )
 }
