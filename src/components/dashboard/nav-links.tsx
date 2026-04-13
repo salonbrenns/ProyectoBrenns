@@ -113,6 +113,7 @@ export default function NavLinks({
       icon: SparklesIcon,
       links: [
         { name: 'Pedidos', href: '/admin/pedidos' }, 
+        { name: 'Proyección',  href: '/admin/proyeccion' },
         { name: 'Promociones', href: '/admin/promociones' },
         { name: 'Pagos', href: '/admin/pagos' },
         { name: 'Reportes', href: '/admin/reportes' },
